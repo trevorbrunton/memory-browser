@@ -1,4 +1,4 @@
-export type Reflection {
+export type Reflection = {
   id: string;
   title: string;
   content: string;

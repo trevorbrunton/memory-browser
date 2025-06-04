@@ -1,4 +1,4 @@
-export type Memory {
+export type Memory = {
   id: string;
   title: string;
   description?: string;

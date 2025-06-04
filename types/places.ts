@@ -1,4 +1,4 @@
-export type Place {
+export type Place = {
   id: string
   name: string
   address?: string
@@ -12,7 +12,7 @@ export type Place {
   updatedAt: Date
 }
 
-export type PlaceAttribute {
+export type PlaceAttribute = {
   attribute: string
   value: string
 }

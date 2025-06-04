@@ -1,4 +1,4 @@
-export type Attribute {
+export type Attribute = {
   id: string
   name: string
   category?: string
