@@ -2,7 +2,7 @@
 
 datasource db {
   provider     = "postgresql"
-  url          = env("DATABASE_URL") // Renamed from POSTGRES_PRISMA_URL for Prisma convention
+  url          = env("POSTGRES_URL") // Renamed from POSTGRES_PRISMA_URL for Prisma convention
   relationMode = "prisma"
 }
 
