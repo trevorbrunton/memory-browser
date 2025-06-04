@@ -6,10 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Check, ChevronDown, X, Plus, Calendar, Loader2, MapPin } from "lucide-react"
-import type { Event } from "../data/events"
-import type { Place } from "../data/places"
 import { useAddEvents } from "../hooks/use-events"
 import { usePlaces } from "../hooks/use-places"
+
+// Import or define the Place type
+import type { Place } from "../types/places" // Adjust the path as needed
+
+// Import or define the Event type
+import type { Event } from "../types/events" // Adjust the path as needed
 
 interface EventSelectorProps {
   allEvents: Event[]
@@ -99,16 +103,7 @@ export function EventSelector({
 
   const isSaving = addEventsMutation.isPending
 
-  const getEventTypeColor = (type: Event["type"]) => {
-    const colors = {
-      meeting: "bg-blue-100 text-blue-800",
-      workshop: "bg-green-100 text-green-800",
-      conference: "bg-purple-100 text-purple-800",
-      social: "bg-pink-100 text-pink-800",
-      training: "bg-orange-100 text-orange-800",
-    }
-    return colors[type] || "bg-gray-100 text-gray-800"
-  }
+ 
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -222,7 +217,7 @@ export function EventSelector({
                       )}
                     </div>
                   </div>
-                  <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>{event.type}</Badge>
+
                 </div>
               )
             })}

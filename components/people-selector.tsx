@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Check, ChevronDown, X, Plus, Database, Loader2 } from "lucide-react"
-import type { Person } from "../data/people"
+import type { Person } from "@/types/people"
 import { useAddPeople } from "../hooks/use-people"
 
 interface PeopleSelectorProps {

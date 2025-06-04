@@ -16,9 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { FileUpload } from "../../components/file-upload"
-import { PeopleSelector } from "../people-selector"
+import { PeopleSelector } from "../../components/people-selector"
 import { PlaceSelector } from "../../components/place-selector"
-import { EventSelector } from "../../components/event-selector"
+import {EventSelector}  from "../../components/event-selector"
 
 export default function CreateMemoryPage() {
   const router = useRouter()
@@ -522,11 +522,10 @@ export default function CreateMemoryPage() {
                             hour: "2-digit",
                             minute: "2-digit",
                           }).format(selectedEvent.date)}
-                          {selectedEvent.location && ` • ${selectedEvent.location}`}
+                          {/* Optionally display related place name if available */}
+                          {selectedPlace && ` • ${selectedPlace.name}`}
                         </div>
-                        <Badge variant="outline" className="mt-1 text-xs">
-                          {selectedEvent.type}
-                        </Badge>
+
                       </div>
                     </div>
                   )}

@@ -14,7 +14,7 @@ export function useAddEvents() {
 
   return useMutation({
     mutationFn: (
-      eventData: { title: string; description?: string; date: Date; placeId?: string; type: Event["type"] }[],
+      eventData: { title: string; description?: string; date: Date; placeId?: string }[],
     ) => eventsActions.addEvents(eventData),
     onMutate: async (eventData) => {
       await queryClient.cancelQueries({ queryKey: ["events"] })
@@ -23,11 +23,10 @@ export function useAddEvents() {
       const optimisticEvents: Event[] = eventData.map((data) => ({
         id: `temp-${Date.now()}-${Math.random()}`,
         title: data.title.trim(),
-        description: data.description || `New ${data.type} event`,
+        description: data.description,
         date: data.date,
+        dateType: "exact", // or set based on your logic
         placeId: data.placeId,
-        type: data.type,
-        capacity: 25,
         attributes: [],
         createdAt: new Date(),
         updatedAt: new Date(),

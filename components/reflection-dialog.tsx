@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, MessageSquare, Save, X } from "lucide-react"
-import type { Reflection } from "../types/memories"
+import type { Reflection } from "@/types/reflection"
 
 interface ReflectionDialogProps {
   open: boolean

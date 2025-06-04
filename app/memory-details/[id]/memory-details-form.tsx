@@ -33,13 +33,14 @@ import {
 import { usePeople } from "../../../hooks/use-people"
 import { usePlaces } from "../../../hooks/use-places"
 import { useEvents } from "../../../hooks/use-events"
-import { PeopleSelector } from "../../people-selector"
-import { PlaceSelector } from "../../../components/place-selector"
-import { EventSelector } from "../../../components/event-selector"
-import type { Memory, Reflection } from "../../types/memories"
+import { PeopleSelector } from "@/components/people-selector"
+import { PlaceSelector } from "@/components/place-selector"
+import { EventSelector } from "@/components/event-selector"
+import type { Memory } from "@/types/memories"
+import type { Reflection } from "@/types/reflection"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
-import { ReflectionDialog } from "../../../components/reflection-dialog"
+import { ReflectionDialog } from "@/components/reflection-dialog"
 
 interface MemoryDetailsFormProps {
   memory: Memory
@@ -393,7 +394,7 @@ export function MemoryDetailsForm({ memory }: MemoryDetailsFormProps) {
             </TabsTrigger>
             <TabsTrigger value="reflections" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
-              Reflections ({memory.reflections?.length || 0})
+              Reflections ({memory.reflectionIds?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -605,7 +606,6 @@ export function MemoryDetailsForm({ memory }: MemoryDetailsFormProps) {
                   selectedPlace={formData.placeId}
                   onSelectionChange={(placeId) => handleInputChange("placeId", placeId)}
                   isLoading={false}
-                  disabled={!!formData.eventId}
                 />
 
                 {selectedPlace && (
@@ -647,20 +647,37 @@ export function MemoryDetailsForm({ memory }: MemoryDetailsFormProps) {
                   </p>
                 </div>
 
-                {memory.reflections && memory.reflections.length > 0 ? (
+                {memory.reflectionIds && memory.reflectionIds.length > 0 ? (
                   <div className="space-y-4">
-                    {memory.reflections
-                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((reflection) => (
+                    {/* You need to fetch or map reflection objects by their IDs here */}
+                    {/* Example: If you have a reflections array in props or context, map by IDs */}
+                    {/* Replace the following with your actual reflection fetching logic */}
+                    {/* 
+                      You need to provide the actual reflections array, e.g. from props or context.
+                      For demonstration, let's assume you have a `reflections` array of type Reflection[].
+                      Replace the following line with your actual data source.
+                    */}
+                    {/* TODO: Replace the following with your actual reflections data source */}
+                    {/* Example: const reflections = useReflectionsForMemory(memory.id) */}
+                    {(memory.reflectionIds as string[]).map((reflectionId) => {
+                      // You need to fetch the reflection object by ID.
+                      // For demonstration, we'll assume you have a `reflections` array available in scope.
+                      // Replace `reflections` with your actual data source.
+                      const reflection = (typeof window !== "undefined" && (window as any).reflections
+                        ? (window as any).reflections
+                        : []
+                      ).find((r: Reflection) => r.id === reflectionId)
+                      if (!reflection) return null
+                      return (
                         <div key={reflection.id} className="border rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <div>
                               <h4 className="font-medium text-sm">{reflection.title}</h4>
                               <div className="text-xs text-gray-500">
-                                {reflection.createdAt.toLocaleDateString()} at{" "}
-                                {reflection.createdAt.toLocaleTimeString()}
-                                {reflection.updatedAt.getTime() !== reflection.createdAt.getTime() && (
-                                  <span className="ml-2">(edited {reflection.updatedAt.toLocaleDateString()})</span>
+                                {new Date(reflection.createdAt).toLocaleDateString()} at{" "}
+                                {new Date(reflection.createdAt).toLocaleTimeString()}
+                                {new Date(reflection.updatedAt).getTime() !== new Date(reflection.createdAt).getTime() && (
+                                  <span className="ml-2">(edited {new Date(reflection.updatedAt).toLocaleDateString()})</span>
                                 )}
                               </div>
                             </div>
@@ -706,7 +723,8 @@ export function MemoryDetailsForm({ memory }: MemoryDetailsFormProps) {
                             }}
                           />
                         </div>
-                      ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">

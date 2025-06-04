@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Save, Calendar, MapPin, Users, Clock, FileText, Plus, X, Settings } from "lucide-react"
 import { useUpdateEventDetails } from "../../../hooks/use-events"
 import { usePlaces } from "../../../hooks/use-places"
-import type { Event, EventAttribute } from "../../types/events"
+import type { Event, EventAttribute } from "@/types/events"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { AttributeSelector } from "../../../components/attribute-selector"
@@ -33,8 +33,6 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
     description: event.description || "",
     date: event.date ? new Date(event.date).toISOString().slice(0, 16) : "",
     placeId: event.placeId || "",
-    type: event.type || "meeting",
-    capacity: event.capacity?.toString() || "",
     attributes: event.attributes || [],
   })
 
@@ -47,8 +45,6 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
       description: event.description || "",
       date: event.date ? new Date(event.date).toISOString().slice(0, 16) : "",
       placeId: event.placeId || "",
-      type: event.type || "meeting",
-      capacity: event.capacity?.toString() || "",
       attributes: event.attributes || [],
     })
     setHasChanges(false)
@@ -61,10 +57,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
       formData.description !== (event.description || "") ||
       formData.date !== (event.date ? new Date(event.date).toISOString().slice(0, 16) : "") ||
       formData.placeId !== (event.placeId || "") ||
-      formData.type !== (event.type || "meeting") ||
-      formData.capacity !== (event.capacity?.toString() || "") ||
       JSON.stringify(formData.attributes) !== JSON.stringify(event.attributes || [])
-
     setHasChanges(hasFormChanges)
   }, [formData, event])
 
@@ -90,8 +83,6 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
         description: formData.description.trim() || undefined,
         date: formData.date ? new Date(formData.date) : new Date(),
         placeId: formData.placeId || undefined,
-        type: formData.type as Event["type"],
-        capacity: formData.capacity ? Number.parseInt(formData.capacity) : undefined,
         attributes: formData.attributes,
       }
 
@@ -121,16 +112,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
     }
   }
 
-  const getEventTypeColor = (type: Event["type"]) => {
-    const colors = {
-      meeting: "bg-blue-100 text-blue-800",
-      workshop: "bg-green-100 text-green-800",
-      conference: "bg-purple-100 text-purple-800",
-      social: "bg-pink-100 text-pink-800",
-      training: "bg-orange-100 text-orange-800",
-    }
-    return colors[type] || "bg-gray-100 text-gray-800"
-  }
+
 
   const formatDateForDisplay = (dateString: string) => {
     if (!dateString) return "Not set"
@@ -180,7 +162,6 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
                 {event.title.charAt(0).toUpperCase()}
               </div>
               <h4 className="font-medium text-lg">{event.title}</h4>
-              <Badge className={`mt-2 ${getEventTypeColor(event.type)}`}>{event.type}</Badge>
             </div>
 
             <div className="space-y-2 text-sm">
@@ -194,12 +175,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
                   <span>{selectedPlace.name}</span>
                 </div>
               )}
-              {formData.capacity && (
-                <div className="flex items-center text-gray-600">
-                  <Users className="h-4 w-4 mr-2" />
-                  <span>{formData.capacity} capacity</span>
-                </div>
-              )}
+
             </div>
 
             {formData.description && (
@@ -233,21 +209,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
                 placeholder="Enter event title"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="type">Event Type</Label>
-              <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="meeting">Meeting</SelectItem>
-                  <SelectItem value="workshop">Workshop</SelectItem>
-                  <SelectItem value="conference">Conference</SelectItem>
-                  <SelectItem value="social">Social</SelectItem>
-                  <SelectItem value="training">Training</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -277,17 +239,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
                 onChange={(e) => handleInputChange("date", e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="capacity">Capacity</Label>
-              <Input
-                id="capacity"
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => handleInputChange("capacity", e.target.value)}
-                placeholder="Enter maximum capacity"
-                min="1"
-              />
-            </div>
+
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="placeId">Location</Label>
               <PlaceSelector
@@ -379,7 +331,7 @@ export function EventDetailsForm({ event }: EventDetailsFormProps) {
               <div className="text-sm text-gray-600">Days Until</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">{formData.capacity || 0}</div>
+
               <div className="text-sm text-gray-600">Capacity</div>
             </div>
             <div>

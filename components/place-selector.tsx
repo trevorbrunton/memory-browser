@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Check, ChevronDown, X, Plus, MapPin, Loader2, Star } from "lucide-react"
-import type { Place } from "../data/places"
+import type { Place } from "@/types/places"
 import { useAddPlaces } from "../hooks/use-places"
 
 interface PlaceSelectorProps {

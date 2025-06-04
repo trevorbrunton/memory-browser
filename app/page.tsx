@@ -93,8 +93,7 @@ export default function Page() {
   const filteredEvents = allEvents.filter(
     (event) =>
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location?.toLowerCase().includes(searchTerm.toLowerCase()),
+      event.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const getPlaceTypeColor = (type: string) => {
@@ -248,9 +247,7 @@ export default function Page() {
                       {memory.description && (
                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">{memory.description}</p>
                       )}
-                      <div className="mt-1 text-xs text-gray-500">
-                        {formatFileSize(memory.mediaSize)} • {memory.mediaName}
-                      </div>
+
                     </div>
 
                     <div className="p-4 space-y-3">
@@ -367,7 +364,7 @@ export default function Page() {
               {filteredPlaces.map((place) => {
                 // Find memories associated with this place
                 const placeMemories = allMemories.filter((memory) => memory.placeId === place.id)
-                const placeEvents = allEvents.filter((event) => event.location === place.name)
+                const placeEvents = allEvents.filter((event) => event.placeId === place.id)
 
                 return (
                   <Card key={place.id} className="overflow-hidden">

@@ -8,12 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Save, User, Calendar, Heart, Users, Plus, X, Settings } from "lucide-react"
-import { useUpdatePersonDetails, usePeople } from "../../../hooks/use-people"
+
 import { PeopleMultipleSelector } from "../../../people-multiple-selector"
 import { AttributeSelector } from "../../../components/attribute-selector"
-import type { Person, PersonAttribute } from "../../../data/people"
+import type { Person, PersonAttribute } from "@/types/people"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+
+
+
 
 interface PersonDetailsFormProps {
   person: Person
@@ -418,3 +421,48 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
     </div>
   )
 }
+function usePeople(): { data?: Person[] } {
+  const [data, setData] = useState<Person[] | undefined>(undefined)
+
+  useEffect(() => {
+    async function fetchPeople() {
+      try {
+        const res = await fetch("/api/people")
+        if (!res.ok) throw new Error("Failed to fetch people")
+        const people = await res.json()
+        setData(people)
+      } catch {
+        setData([])
+      }
+    }
+    fetchPeople()
+  }, [])
+
+  return { data }
+}
+type UpdatePersonArgs = {
+  id: string
+  updates: Partial<Person>
+}
+
+function useUpdatePersonDetails() {
+  const [isPending, setIsPending] = useState(false)
+
+  async function mutateAsync({ id, updates }: UpdatePersonArgs) {
+    setIsPending(true)
+    try {
+      const res = await fetch(`/api/people/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      })
+      if (!res.ok) throw new Error("Failed to update person")
+      return await res.json()
+    } finally {
+      setIsPending(false)
+    }
+  }
+
+  return { mutateAsync, isPending }
+}
+

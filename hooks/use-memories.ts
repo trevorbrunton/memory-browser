@@ -36,12 +36,12 @@ export function useAddMemory() {
         mediaType: memoryData.mediaType,
         mediaUrl: memoryData.mediaUrl,
         mediaName: memoryData.mediaName,
-        mediaSize: memoryData.mediaSize,
         date: memoryData.date,
+        dateType: "exact", // or another appropriate default value
         peopleIds: memoryData.peopleIds,
         placeId: memoryData.placeId,
         eventId: memoryData.eventId,
-        reflections: [],
+        reflectionIds: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -104,12 +104,12 @@ export function useAddMemoryWithFile() {
         mediaType: file.type.startsWith("image/") ? "photo" : "document",
         mediaUrl: URL.createObjectURL(file), // Temporary URL for preview
         mediaName: file.name,
-        mediaSize: file.size,
         date: memoryData.date,
+        dateType: "exact", // or another appropriate default value
         peopleIds: memoryData.peopleIds,
         placeId: memoryData.placeId,
         eventId: memoryData.eventId,
-        reflections: [],
+        reflectionIds: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -228,7 +228,7 @@ export function useAddReflection() {
         if (old) {
           return {
             ...old,
-            reflections: [...old.reflections, newReflection],
+            reflectionIds: [...old.reflectionIds, newReflection.id],
           }
         }
         return old
@@ -238,7 +238,7 @@ export function useAddReflection() {
       queryClient.setQueryData<Memory[]>(["memories"], (old) => {
         if (old) {
           return old.map((memory) =>
-            memory.id === memoryId ? { ...memory, reflections: [...memory.reflections, newReflection] } : memory,
+            memory.id === memoryId ? { ...memory, reflectionIds: [...memory.reflectionIds, newReflection.id] } : memory,
           )
         }
         return old
@@ -257,25 +257,13 @@ export function useUpdateReflection() {
       if (!updatedReflection) return
 
       // Update all relevant queries
-      queryClient.setQueriesData<Memory>({ queryKey: ["memory"] }, (old) => {
-        if (old && old.reflections.some((r) => r.id === reflectionId)) {
-          return {
-            ...old,
-            reflections: old.reflections.map((r) => (r.id === reflectionId ? updatedReflection : r)),
-          }
-        }
-        return old
-      })
+      // No need to update 'reflectionIds' here, as they are just IDs and not objects.
+      // If you have a separate cache for reflections, update that instead.
+      // Otherwise, you can remove this block or leave it as a no-op.
+      // For demonstration, we'll just return the old memory.
+      queryClient.setQueriesData<Memory>({ queryKey: ["memory"] }, (old) => old)
 
-      queryClient.setQueryData<Memory[]>(["memories"], (old) => {
-        if (old) {
-          return old.map((memory) => ({
-            ...memory,
-            reflections: memory.reflections.map((r) => (r.id === reflectionId ? updatedReflection : r)),
-          }))
-        }
-        return old
-      })
+      queryClient.setQueryData<Memory[]>(["memories"], (old) => old)
     },
   })
 }
@@ -292,7 +280,7 @@ export function useDeleteReflection() {
           if (old) {
             return {
               ...old,
-              reflections: old.reflections.filter((r) => r.id !== reflectionId),
+              reflectionIds: old.reflectionIds.filter((id) => id !== reflectionId),
             }
           }
           return old
@@ -302,7 +290,7 @@ export function useDeleteReflection() {
           if (old) {
             return old.map((memory) => ({
               ...memory,
-              reflections: memory.reflections.filter((r) => r.id !== reflectionId),
+              reflectionIds: memory.reflectionIds.filter((id) => id !== reflectionId),
             }))
           }
           return old

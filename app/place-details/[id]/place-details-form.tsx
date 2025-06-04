@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Save, MapPin, Star, Users, Building, Globe, Plus, X, Settings } from "lucide-react"
-import { useUpdatePlaceDetails } from "../../../hooks/use-places"
-import type { Place, PlaceAttribute } from "../../../data/places"
+import type { Place, PlaceAttribute } from "@/types/places"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { AttributeSelector } from "../../../components/attribute-selector"
+import { useMutation } from "@tanstack/react-query"
+import { updatePlace } from "@/app/actions/places";
+
+
+
 
 interface PlaceDetailsFormProps {
   place: Place
@@ -455,3 +459,13 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
     </div>
   )
 }
+
+
+function useUpdatePlaceDetails() {
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: Place["id"]; updates: Partial<Place> }) => {
+      return updatePlace(id, updates)
+    },
+  })
+}
+
