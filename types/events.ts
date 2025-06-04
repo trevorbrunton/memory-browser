@@ -1,17 +1,16 @@
-export interface Event {
-  id: string
-  title: string
-  description?: string
-  date: Date
-  placeId?: string
-  type: "meeting" | "workshop" | "conference" | "social" | "training"
-  capacity?: number
-  attributes?: EventAttribute[]
-  createdAt: Date
-  updatedAt: Date
-}
+export type Event = {
+  id: string;
+  title: string;
+  description?: string;
+  date: Date;
+  dateType: "year" | "month" | "day" | "exact";
+  placeId?: string;
+  attributes?: EventAttribute[];
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export interface EventAttribute {
-  attribute: string
-  value: string
-}
+export type EventAttribute = {
+  attribute: string;
+  value: string;
+};

@@ -1,4 +1,4 @@
-export interface Place {
+export type Place {
   id: string
   name: string
   address?: string
@@ -12,7 +12,7 @@ export interface Place {
   updatedAt: Date
 }
 
-export interface PlaceAttribute {
+export type PlaceAttribute {
   attribute: string
   value: string
 }

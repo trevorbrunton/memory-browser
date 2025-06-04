@@ -1,14 +1,11 @@
-export interface Attribute {
+export type Attribute {
   id: string
   name: string
   category?: string
   description?: string
-  entityType: "person" | "event" | "place" | "all"
+  entityType: "person" | "event" | "place" | "reflection" | "journal" | "all"
   createdAt: Date
   updatedAt: Date
 }
 
-export interface PersonAttribute {
-  attribute: string
-  value: string
-}
+

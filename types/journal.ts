@@ -1,20 +1,14 @@
-export type MediaType = "photo" | "document";
-
-
-
-export type Memory = {
+export type Memory {
   id: string;
   title: string;
   description?: string;
-  mediaType: MediaType;
-  mediaUrl: string;
-  mediaName: string;
   date: Date;
   dateType: "year" | "month" | "day" | "exact";
   peopleIds: string[];
   placeId?: string;
   eventId?: string;
+  memoryIds?: string[];
   reflectionIds: string[];
   createdAt: Date;
   updatedAt: Date;
-};
+}
