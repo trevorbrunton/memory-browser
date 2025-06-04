@@ -1,280 +1,260 @@
-"use server"
+// app/actions/events.ts
+"use server";
 
-import { createServerClient } from "../../lib/supabase"
-import type { Event } from "../../types/events"
+import prisma from "@/lib/prisma";
+import type {
+  Event as PrismaEvent,
+  EventAttribute as PrismaEventAttribute,
+} from "@prisma/client";
+import type {
+  Event as CustomEventType,
+  EventAttribute as CustomEventAttributeType,
+} from "@/types/events";
 
-export async function getAllEvents(): Promise<Event[]> {
-  console.log("📅 Reading events from Supabase...")
-  const supabase = createServerClient()
-
-  const { data: events, error } = await supabase
-    .from("events")
-    .select(`
-      *,
-      event_attributes (
-        attribute,
-        value
-      )
-    `)
-    .order("date", { ascending: false })
-
-  if (error) {
-    console.error("❌ Error fetching events:", error)
-    throw new Error(`Failed to fetch events: ${error.message}`)
+function transformEvent(
+  event: PrismaEvent & {
+    attributes?: PrismaEventAttribute[];
+    place?: { id: string; name: string } | null;
   }
-
-  const transformedEvents: Event[] = events.map((event) => ({
+): CustomEventType {
+  return {
     id: event.id,
     title: event.title,
     description: event.description || undefined,
     date: new Date(event.date),
+    dateType: event.type as CustomEventType["dateType"],
     placeId: event.place_id || undefined,
-    type: event.type as Event["type"],
-    capacity: event.capacity || undefined,
+
     attributes:
-      event.event_attributes?.map((attr: any) => ({
+      event.attributes?.map((attr) => ({
         attribute: attr.attribute,
         value: attr.value,
       })) || [],
     createdAt: new Date(event.created_at),
     updatedAt: new Date(event.updated_at),
-  }))
+    // If you need place name directly, ensure it's included in the query and added here
+    // location: event.place?.name // Example if place is included
+  };
+}
 
-  console.log(`✅ Retrieved ${transformedEvents.length} events from Supabase`)
-  return transformedEvents
+export async function getAllEvents(): Promise<CustomEventType[]> {
+  console.log("📅 Reading events with Prisma (MongoDB)...");
+  try {
+    const events = await prisma.event.findMany({
+      include: {
+        attributes: true,
+        place: { select: { id: true, name: true } }, // Include place name
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+    const transformedEvents = events.map(transformEvent);
+    console.log(
+      `✅ Retrieved ${transformedEvents.length} events with Prisma (MongoDB)`
+    );
+    return transformedEvents;
+  } catch (error) {
+    console.error("❌ Error fetching events with Prisma (MongoDB):", error);
+    throw new Error(
+      `Failed to fetch events: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
 }
 
 export async function addEvents(
-  eventData: { title: string; description?: string; date: Date; placeId?: string; type: Event["type"] }[],
-): Promise<Event[]> {
+  eventData: {
+    title: string;
+    description?: string;
+    date: Date;
+    placeId?: string;
+
+  }[]
+): Promise<CustomEventType[]> {
   console.log(
-    "💾 Adding events to Supabase:",
-    eventData.map((e) => e.title),
-  )
-  const supabase = createServerClient()
-
-  const eventsToInsert = eventData.map((data) => ({
-    title: data.title.trim(),
-    description: data.description || `New ${data.type} event`,
-    date: data.date.toISOString(),
-    place_id: data.placeId || null,
-    type: data.type,
-    capacity: 25,
-  }))
-
-  const { data: newEvents, error } = await supabase.from("events").insert(eventsToInsert).select()
-
-  if (error) {
-    console.error("❌ Error adding events:", error)
-    throw new Error(`Failed to add events: ${error.message}`)
+    "💾 Adding events with Prisma (MongoDB):",
+    eventData.map((e) => e.title)
+  );
+  try {
+    const createdEvents: CustomEventType[] = [];
+    for (const data of eventData) {
+      const newEvent = await prisma.event.create({
+        data: {
+          title: data.title.trim(),
+          description: data.description,
+          date: data.date,
+          type: "DEFAULT", // <-- Replace "DEFAULT" with the appropriate default or value from data
+          ...(data.placeId ? { place: { connect: { id: data.placeId } } } : {}),
+        },
+        include: {
+          attributes: true,
+          place: { select: { id: true, name: true } },
+        },
+      });
+      createdEvents.push(transformEvent(newEvent));
+    }
+    console.log(
+      `✅ Successfully added ${createdEvents.length} events with Prisma (MongoDB)`
+    );
+    return createdEvents;
+  } catch (error) {
+    console.error("❌ Error adding events with Prisma (MongoDB):", error);
+    throw new Error(
+      `Failed to add events: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
-
-  const transformedEvents: Event[] = newEvents.map((event) => ({
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    date: new Date(event.date),
-    placeId: event.place_id,
-    type: event.type as Event["type"],
-    capacity: event.capacity,
-    attributes: [],
-    createdAt: new Date(event.created_at),
-    updatedAt: new Date(event.updated_at),
-  }))
-
-  console.log(`✅ Successfully added ${transformedEvents.length} events to Supabase`)
-  return transformedEvents
 }
 
 export async function updateEvent(
   id: string,
-  updates: Partial<Omit<Event, "id" | "createdAt">>,
-): Promise<Event | null> {
-  console.log(`🔄 Updating event ${id} in Supabase:`, updates)
-  const supabase = createServerClient()
+  updates: Partial<Omit<CustomEventType, "id" | "createdAt">>
+): Promise<CustomEventType | null> {
+  console.log(`🔄 Updating event ${id} with Prisma (MongoDB):`, updates);
+  try {
+    const { attributes, placeId, ...eventUpdates } = updates;
 
-  const { attributes, ...eventUpdates } = updates
+    const dataToUpdate: any = {
+      ...eventUpdates,
+      date: eventUpdates.date ? new Date(eventUpdates.date) : undefined,
+      // place_id handling
+      ...(placeId === null // Explicitly setting to null (disconnect)
+        ? { place: { disconnect: true } }
+        : placeId // If a string ID is provided
+        ? { place: { connect: { id: placeId } } }
+        : {}), // If placeId is undefined, do nothing with the relation
+    };
 
-  const dbUpdates: any = {
-    ...eventUpdates,
-    updated_at: new Date().toISOString(),
+    // Remove undefined keys so Prisma doesn't try to set them to null if not intended
+    Object.keys(dataToUpdate).forEach(
+      (key) => dataToUpdate[key] === undefined && delete dataToUpdate[key]
+    );
+
+    const updatedEvent = await prisma.$transaction(async (tx) => {
+      const event = await tx.event.update({
+        where: { id },
+        data: dataToUpdate,
+        include: {
+          attributes: true,
+          place: { select: { id: true, name: true } },
+        },
+      });
+
+      if (attributes) {
+        await tx.eventAttribute.deleteMany({ where: { event_id: id } });
+        if (attributes.length > 0) {
+          await tx.eventAttribute.createMany({
+            data: attributes.map((attr) => ({
+              event_id: id,
+              attribute: attr.attribute,
+              value: attr.value,
+            })),
+          });
+        }
+      }
+      // Re-fetch to ensure attributes are correctly populated after createMany
+      return tx.event.findUnique({
+        where: { id },
+        include: {
+          attributes: true,
+          place: { select: { id: true, name: true } },
+        },
+      });
+    });
+
+    if (!updatedEvent) return null;
+
+    const transformedEvent = transformEvent(updatedEvent);
+    console.log(`✅ Successfully updated event ${id} with Prisma (MongoDB)`);
+    return transformedEvent;
+  } catch (error) {
+    console.error("❌ Error updating event with Prisma (MongoDB):", error);
+    throw new Error(
+      `Failed to update event: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
-
-  if (eventUpdates.date) {
-    dbUpdates.date = eventUpdates.date.toISOString()
-  }
-  if (eventUpdates.placeId !== undefined) {
-    dbUpdates.place_id = eventUpdates.placeId
-    delete dbUpdates.placeId
-  }
-
-  const { data: updatedEvent, error } = await supabase.from("events").update(dbUpdates).eq("id", id).select().single()
-
-  if (error) {
-    console.error("❌ Error updating event:", error)
-    return null
-  }
-
-  // Update attributes if provided
-  if (attributes && attributes.length > 0) {
-    await supabase.from("event_attributes").delete().eq("event_id", id)
-
-    const attributesToInsert = attributes.map((attr) => ({
-      event_id: id,
-      attribute: attr.attribute,
-      value: attr.value,
-    }))
-
-    await supabase.from("event_attributes").insert(attributesToInsert)
-  }
-
-  // Fetch complete updated event with attributes
-  const { data: completeEvent } = await supabase
-    .from("events")
-    .select(`
-      *,
-      event_attributes (
-        attribute,
-        value
-      )
-    `)
-    .eq("id", id)
-    .single()
-
-  const transformedEvent: Event = {
-    id: completeEvent.id,
-    title: completeEvent.title,
-    description: completeEvent.description,
-    date: new Date(completeEvent.date),
-    placeId: completeEvent.place_id,
-    type: completeEvent.type as Event["type"],
-    capacity: completeEvent.capacity,
-    attributes:
-      completeEvent.event_attributes?.map((attr: any) => ({
-        attribute: attr.attribute,
-        value: attr.value,
-      })) || [],
-    createdAt: new Date(completeEvent.created_at),
-    updatedAt: new Date(completeEvent.updated_at),
-  }
-
-  console.log(`✅ Successfully updated event ${id}`)
-  return transformedEvent
 }
 
 export async function deleteEvent(id: string): Promise<boolean> {
-  console.log(`🗑️ Deleting event ${id} from Supabase...`)
-  const supabase = createServerClient()
-
-  // First, update any memories that reference this event to clear the event and place associations
-  const { error: memoryUpdateError } = await supabase
-    .from("memories")
-    .update({
-      event_id: null,
-      place_id: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("event_id", id)
-
-  if (memoryUpdateError) {
-    console.error("❌ Error updating memories when deleting event:", memoryUpdateError)
-    // Continue with deletion even if memory update fails
-  } else {
-    console.log(`✅ Updated memories to clear references to deleted event ${id}`)
+  console.log(`🗑️ Deleting event ${id} with Prisma (MongoDB)...`);
+  try {
+    // Prisma will handle cascading deletes or setting nulls based on schema relations
+    // For example, if MemoryEvent has onDelete: Cascade for its event relation
+    await prisma.event.delete({
+      where: { id },
+    });
+    console.log(`✅ Successfully deleted event ${id} with Prisma (MongoDB)`);
+    return true;
+  } catch (error) {
+    console.error("❌ Error deleting event with Prisma (MongoDB):", error);
+    return false;
   }
-
-  // Now delete the event
-  const { error } = await supabase.from("events").delete().eq("id", id)
-
-  if (error) {
-    console.error("❌ Error deleting event:", error)
-    return false
-  }
-
-  console.log(`✅ Successfully deleted event ${id}`)
-  return true
 }
 
-export async function searchEvents(query: string): Promise<Event[]> {
-  console.log(`🔍 Searching events for: "${query}"`)
-  const supabase = createServerClient()
-
-  const { data: events, error } = await supabase
-    .from("events")
-    .select(`
-      *,
-      event_attributes (
-        attribute,
-        value
-      )
-    `)
-    .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-    .order("date", { ascending: false })
-
-  if (error) {
-    console.error("❌ Error searching events:", error)
-    throw new Error(`Failed to search events: ${error.message}`)
+export async function searchEvents(query: string): Promise<CustomEventType[]> {
+  console.log(`🔍 Searching events for: "${query}" with Prisma (MongoDB)`);
+  try {
+    const events = await prisma.event.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+          // Searching by place name would require a more complex query or denormalization
+        ],
+      },
+      include: {
+        attributes: true,
+        place: { select: { id: true, name: true } },
+      },
+      orderBy: { date: "desc" },
+    });
+    const transformedEvents = events.map(transformEvent);
+    console.log(
+      `✅ Found ${transformedEvents.length} events matching "${query}" with Prisma (MongoDB)`
+    );
+    return transformedEvents;
+  } catch (error) {
+    console.error("❌ Error searching events with Prisma (MongoDB):", error);
+    throw new Error(
+      `Failed to search events: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
-
-  const transformedEvents: Event[] = events.map((event) => ({
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    date: new Date(event.date),
-    placeId: event.place_id,
-    type: event.type as Event["type"],
-    capacity: event.capacity,
-    attributes:
-      event.event_attributes?.map((attr: any) => ({
-        attribute: attr.attribute,
-        value: attr.value,
-      })) || [],
-    createdAt: new Date(event.created_at),
-    updatedAt: new Date(event.updated_at),
-  }))
-
-  console.log(`✅ Found ${transformedEvents.length} events matching "${query}"`)
-  return transformedEvents
 }
 
-export async function getEventDetails(id: string): Promise<Event | null> {
-  console.log(`📖 Reading event details for ID: ${id}`)
-  const supabase = createServerClient()
+export async function getEventDetails(
+  id: string
+): Promise<CustomEventType | null> {
+  console.log(`📖 Reading event details for ID: ${id} with Prisma (MongoDB)`);
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        attributes: true,
+        place: { select: { id: true, name: true } },
+      },
+    });
 
-  const { data: event, error } = await supabase
-    .from("events")
-    .select(`
-      *,
-      event_attributes (
-        attribute,
-        value
-      )
-    `)
-    .eq("id", id)
-    .single()
-
-  if (error) {
-    console.error("❌ Error fetching event details:", error)
-    return null
+    if (!event) {
+      console.log(`❌ Event with ID ${id} not found with Prisma (MongoDB).`);
+      return null;
+    }
+    const transformedEvent = transformEvent(event);
+    console.log(
+      `✅ Retrieved event details for: ${transformedEvent.title} with Prisma (MongoDB)`
+    );
+    return transformedEvent;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching event details with Prisma (MongoDB):",
+      error
+    );
+    return null;
   }
-
-  const transformedEvent: Event = {
-    id: event.id,
-    title: event.title,
-    description: event.description,
-    date: new Date(event.date),
-    placeId: event.place_id,
-    type: event.type as Event["type"],
-    capacity: event.capacity,
-    attributes:
-      event.event_attributes?.map((attr: any) => ({
-        attribute: attr.attribute,
-        value: attr.value,
-      })) || [],
-    createdAt: new Date(event.created_at),
-    updatedAt: new Date(event.updated_at),
-  }
-
-  console.log(`✅ Retrieved event details for: ${transformedEvent.title}`)
-  return transformedEvent
 }
