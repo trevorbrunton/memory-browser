@@ -4,7 +4,7 @@ export type Event = {
   description?: string;
   date: Date;
   dateType: "year" | "month" | "day" | "exact";
-  placeId?: string;
+  placeId?: string | null;
   attributes?: EventAttribute[];
   createdAt: Date;
   updatedAt: Date;
