@@ -41,7 +41,8 @@ export function EventSelector({
     (event) =>
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getPlaceName(event.placeId)?.toLowerCase().includes(searchTerm.toLowerCase()),
+      (getPlaceName(event.placeId ?? undefined) &&
+        getPlaceName(event.placeId ?? undefined)!.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   const canAddNew =
@@ -74,7 +75,7 @@ export function EventSelector({
           description: `New event: ${title}`,
           date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to next week
           placeId: undefined, // No place by default
-          type: "meeting" as const,
+          type: "exact" as const, // Use a valid type
         }))
 
         const newEvents = await addEventsMutation.mutateAsync(eventData)
@@ -194,7 +195,7 @@ export function EventSelector({
             )}
 
             {filteredEvents.map((event) => {
-              const placeName = getPlaceName(event.placeId)
+              const placeName = getPlaceName(event.placeId ?? undefined)
 
               return (
                 <div

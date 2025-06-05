@@ -6,7 +6,7 @@ export function useUpdateMemoryEvent() {
 
   return useMutation({
     mutationFn: ({ memoryId, eventId }: { memoryId: string; eventId: string | null }) =>
-      memoriesActions.updateMemoryEvent(memoryId, eventId),
+      memoriesActions.updateMemoryEventAssociation(memoryId, eventId),
     onSuccess: (data, { memoryId }) => {
       queryClient.invalidateQueries({ queryKey: ["memories"] })
       queryClient.invalidateQueries({ queryKey: ["memory", memoryId] })
