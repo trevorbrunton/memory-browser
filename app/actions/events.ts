@@ -44,7 +44,7 @@ export async function getAllEvents(): Promise<CustomEventType[]> {
     });
     return events.map(transformEvent);
   } catch (error) {
-    console.error("❌ Error fetching events:", error);
+    console.error("Error fetching events:", error);
     throw new Error(
       `Failed to fetch events: ${
         error instanceof Error ? error.message : String(error)
@@ -65,7 +65,7 @@ export async function addEvents(
   eventDataArray: AddEventServerDTO[]
 ): Promise<CustomEventType[]> {
   console.log(
-    "💾 Adding events:",
+    "Adding events:",
     eventDataArray.map((e) => e.title)
   );
   try {
@@ -88,7 +88,7 @@ export async function addEvents(
     }
     return createdEvents;
   } catch (error) {
-    console.error("❌ Error adding events:", error);
+    console.error("Error adding events:", error);
     throw new Error(
       `Failed to add events: ${
         error instanceof Error ? error.message : String(error)
@@ -101,12 +101,6 @@ export async function updateEvent(
   eventId: string,
   updates: Partial<Omit<CustomEventType, "id" | "createdAt" | "updatedAt">>
 ): Promise<CustomEventType | null> {
-  console.log(`\n--- [Action] Attempting to update event ${eventId} ---`);
-  console.log(
-    "[Action] Received updates payload:",
-    JSON.stringify(updates, null, 2)
-  );
-
   try {
     const {
       attributes,
@@ -172,14 +166,9 @@ export async function updateEvent(
         throw new Error("Event record update failed within transaction.");
       }
       const eventFinalPlaceId = updatedEventRecord.place_id;
-      console.log(
-        `[TXN_STEP] Event ${eventId}: Event record updated. Effective event.place_id: ${eventFinalPlaceId}`
-      );
 
       if (updates.hasOwnProperty("placeId")) {
-        console.log(
-          `[TXN_STEP] Event ${eventId}: 'placeId' was in updates. Cascading to memories.`
-        );
+
         const associatedMemoryEvents = await tx.memoryEvent.findMany({
           where: { event_id: eventId },
           select: { memory_id: true },
@@ -187,37 +176,24 @@ export async function updateEvent(
 
         if (associatedMemoryEvents.length > 0) {
           const memoryIds = associatedMemoryEvents.map((me) => me.memory_id);
-          console.log(
-            `[TXN_STEP] Event ${eventId}: Found ${
-              memoryIds.length
-            } associated memories: ${memoryIds.join(", ")}`
-          );
+
 
           const deletedMemoryPlacesCount = await tx.memoryPlace.deleteMany({
             where: { memory_id: { in: memoryIds } },
           });
-          console.log(
-            `[TXN_STEP] Event ${eventId}: Deleted ${deletedMemoryPlacesCount.count} MemoryPlace records for associated memories.`
-          );
+
 
           if (eventFinalPlaceId) {
-            console.log(
-              `[TXN_STEP] Event ${eventId}: Event has new place ${eventFinalPlaceId}. Creating MemoryPlace links for ${memoryIds.length} memories.`
-            );
+
             const createdMemoryPlaces = await tx.memoryPlace.createMany({
               data: memoryIds.map((memId) => ({
                 memory_id: memId,
                 place_id: eventFinalPlaceId,
               })),
             });
-            console.log(
-              `[TXN_STEP] Event ${eventId}: Created ${createdMemoryPlaces.count} new MemoryPlace records.`
-            );
-          } else {
-            console.log(
-              `[TXN_STEP] Event ${eventId}: Event has no place (place_id is null). No new MemoryPlace records created for memories.`
-            );
-          }
+
+          } 
+          
 
           await tx.memory.updateMany({
             where: { id: { in: memoryIds } },
@@ -226,11 +202,7 @@ export async function updateEvent(
           console.log(
             `[TXN_STEP] Event ${eventId}: Updated 'updated_at' for ${memoryIds.length} memories.`
           );
-        } else {
-          console.log(
-            `[TXN_STEP] Event ${eventId}: No memories associated with this event to cascade place update to.`
-          );
-        }
+        } 
       } else {
         console.log(
           `[TXN_STEP] Event ${eventId}: 'placeId' was NOT in updates. No cascade to memories needed for place.`
@@ -274,7 +246,7 @@ export async function updateEvent(
     return eventAfterTransaction ? transformEvent(eventAfterTransaction) : null;
   } catch (error) {
     console.error(
-      `❌ Error in updateEvent action for event ${eventId}:`,
+      `Error in updateEvent action for event ${eventId}:`,
       error
     );
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -309,7 +281,7 @@ export async function deleteEvent(id: string): Promise<boolean> {
     console.log(`✅ Successfully deleted event ${id}`);
     return true;
   } catch (error) {
-    console.error(`❌ Error deleting event ${id}:`, error);
+    console.error(`Error deleting event ${id}:`, error);
     throw new Error(
       `Failed to delete event: ${
         error instanceof Error ? error.message : String(error)
@@ -319,7 +291,7 @@ export async function deleteEvent(id: string): Promise<boolean> {
 }
 
 export async function searchEvents(query: string): Promise<CustomEventType[]> {
-  console.log(`🔍 Searching events for: "${query}"`);
+  console.log(`Searching events for: "${query}"`);
   try {
     const events = await prisma.event.findMany({
       where: {
@@ -337,7 +309,7 @@ export async function searchEvents(query: string): Promise<CustomEventType[]> {
     });
     return events.map(transformEvent);
   } catch (error) {
-    console.error("❌ Error searching events:", error);
+    console.error("Error searching events:", error);
     throw new Error(
       `Failed to search events: ${
         error instanceof Error ? error.message : String(error)
@@ -360,7 +332,7 @@ export async function getEventDetails(
     });
     return event ? transformEvent(event) : null;
   } catch (error) {
-    console.error(`❌ Error fetching event details for ID ${id}:`, error);
+    console.error(`Error fetching event details for ID ${id}:`, error);
     throw new Error(
       `Failed to fetch event details: ${
         error instanceof Error ? error.message : String(error)
