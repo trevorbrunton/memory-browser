@@ -1,8 +1,10 @@
+import type { Reflection } from "@/types/reflection";
+
 export type MediaType = "photo" | "document";
 
 
 
-export type Memory = {
+export interface Memory {
   id: string;
   title: string;
   description?: string;
@@ -10,11 +12,12 @@ export type Memory = {
   mediaUrl: string;
   mediaName: string;
   date: Date;
-  dateType: "year" | "month" | "day" | "exact";
+  dateType: string;
   peopleIds: string[];
   placeId?: string;
   eventId?: string;
+  reflections: Reflection[]; // Add this line
   reflectionIds: string[];
   createdAt: Date;
   updatedAt: Date;
-};
+}
