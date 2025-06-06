@@ -231,7 +231,7 @@ export function useAddMemoryWithFile() {
         throw new Error("Failed to upload main file to S3.");
       }
 
-      const mediaUrl = `https://s3.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${mainUploadedFileName}`;
+      const mediaUrl = `https://${process.env.NEXT_PUBLIC_AWS_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_BUCKET_REGION}.amazonaws.com/${mainUploadedFileName}`;
       let thumbnailUrl: string | undefined = undefined;
 
       // 2. Generate and upload thumbnail if it's an image
@@ -259,7 +259,7 @@ export function useAddMemoryWithFile() {
             });
 
             if (thumbUploadResult.ok) {
-              thumbnailUrl = `https://s3.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${thumbUploadedFileName}`;
+              thumbnailUrl = `https://${process.env.NEXT_PUBLIC_AWS_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_BUCKET_REGION}.amazonaws.com/${thumbUploadedFileName}`;
             } else {
               console.warn(
                 "Thumbnail upload failed, but continuing without it."
