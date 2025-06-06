@@ -155,8 +155,8 @@ model Memory {
   description String?
   media_type  String // "photo", "document"
   media_url   String
+  media_thumbnail String? // Optional thumbnail for media
   media_name  String
-  media_size  Int
   date        DateTime
   // place_id and event_id are handled by MemoryPlace and MemoryEvent relations for better M-N potential
   created_at  DateTime @default(now())

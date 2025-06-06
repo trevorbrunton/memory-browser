@@ -7,7 +7,7 @@ import type {
   Reflection as PrismaReflection,
   MemoryPerson as PrismaMemoryPerson,
   Place as PrismaPlace,
-  Event as PrismaEvent, // Using base PrismaEvent type
+  Event as PrismaEvent,
   MemoryPlace as PrismaMemoryPlace,
   MemoryEvent as PrismaMemoryEvent,
   Person as PrismaPersonInfo,
@@ -16,8 +16,6 @@ import type {
 import type { Memory as CustomMemoryType, MediaType } from "@/types/memories";
 import type { Reflection as CustomReflectionType } from "@/types/reflection";
 
-// Define a precise type for what Prisma returns from queries with 'include'
-// This helps TypeScript understand the shape of data passed to transformMemory.
 type PrismaMemoryWithFullIncludes = PrismaMemory & {
   people?: (PrismaMemoryPerson & { person: PrismaPersonInfo })[];
   places?: (PrismaMemoryPlace & { place: PrismaPlace })[];
@@ -27,10 +25,8 @@ type PrismaMemoryWithFullIncludes = PrismaMemory & {
   reflections?: PrismaReflection[];
 };
 
-// This function IS SYNCHRONOUS and SHOULD REMAIN SYNCHRONOUS.
-// It transforms an already-fetched Prisma object into your custom type.
 function transformMemory(
-  memory: PrismaMemoryWithFullIncludes // Parameter type is crucial
+  memory: PrismaMemoryWithFullIncludes
 ): CustomMemoryType {
   return {
     id: memory.id,
@@ -38,9 +34,10 @@ function transformMemory(
     description: memory.description || undefined,
     mediaType: memory.media_type as MediaType,
     mediaUrl: memory.media_url,
+    thumbnailUrl: (memory as any).thumbnail_url || undefined,
     mediaName: memory.media_name,
     date: new Date(memory.date),
-    dateType: (memory as any).date_type || "exact", // Cast if date_type is not strictly on PrismaMemory but expected
+    dateType: (memory as any).date_type || "exact",
     peopleIds: memory.people?.map((mp) => mp.person_id) || [],
     placeId: memory.places?.[0]?.place_id || undefined,
     eventId: memory.events?.[0]?.event_id || undefined,
@@ -51,7 +48,6 @@ function transformMemory(
   };
 }
 
-// This is also SYNCHRONOUS.
 function transformReflection(
   reflection: PrismaReflection
 ): CustomReflectionType {
@@ -64,14 +60,11 @@ function transformReflection(
   };
 }
 
-// --- Exported Server Actions (These ARE async) ---
-
 export async function getAllMemories(): Promise<CustomMemoryType[]> {
   console.log("💭 Reading memories with Prisma (MongoDB)...");
   try {
     const memoriesFromDb: PrismaMemoryWithFullIncludes[] =
       await prisma.memory.findMany({
-        // Await the Prisma query
         include: {
           people: { include: { person: true } },
           places: { include: { place: true } },
@@ -80,7 +73,6 @@ export async function getAllMemories(): Promise<CustomMemoryType[]> {
         },
         orderBy: { date: "desc" },
       });
-    // .map calls transformMemory synchronously for each item in the resolved array
     return memoriesFromDb.map(transformMemory);
   } catch (error) {
     console.error("❌ Error fetching memories with Prisma (MongoDB):", error);
@@ -97,8 +89,8 @@ interface AddMemoryServerDTO {
   description?: string;
   mediaType: MediaType;
   mediaUrl: string;
+  thumbnailUrl?: string;
   mediaName: string;
-  mediaSize: number;
   date: Date;
   peopleIds: string[];
   placeId?: string;
@@ -113,13 +105,13 @@ export async function addMemory(
     const { peopleIds, placeId, eventId, ...restOfMemoryData } = memoryData;
     const newMemoryFromDb: PrismaMemoryWithFullIncludes =
       await prisma.memory.create({
-        // Await the Prisma query
         data: {
-          ...restOfMemoryData,
-          media_type: memoryData.mediaType,
-          media_url: memoryData.mediaUrl,
-          media_name: memoryData.mediaName,
-          media_size: memoryData.mediaSize, // Ensure this field exists in your Prisma Memory model
+          title: restOfMemoryData.title,
+          description: restOfMemoryData.description,
+          media_type: restOfMemoryData.mediaType,
+          media_url: restOfMemoryData.mediaUrl,
+          media_name: restOfMemoryData.mediaName,
+          date: restOfMemoryData.date,
           people:
             peopleIds.length > 0
               ? {
@@ -138,7 +130,6 @@ export async function addMemory(
           reflections: true,
         },
       });
-    // Call transformMemory synchronously with the resolved data
     return transformMemory(newMemoryFromDb);
   } catch (error) {
     console.error("❌ Error adding memory with Prisma (MongoDB):", error);
@@ -173,7 +164,6 @@ export async function updateMemoryDetails(
 
     const updatedMemoryFromDb: PrismaMemoryWithFullIncludes | null =
       await prisma.memory.update({
-        // Await Prisma
         where: { id },
         data: dataToUpdate,
         include: {
@@ -183,7 +173,7 @@ export async function updateMemoryDetails(
           reflections: true,
         },
       });
-    return updatedMemoryFromDb ? transformMemory(updatedMemoryFromDb) : null; // Synchronous call
+    return updatedMemoryFromDb ? transformMemory(updatedMemoryFromDb) : null;
   } catch (error) {
     console.error("❌ Error updating core memory details:", error);
     throw error;
@@ -200,7 +190,6 @@ export async function updateMemoryPeople(
   );
   try {
     const updatedMemoryFromDb = await prisma.$transaction(async (tx) => {
-      // Await transaction
       await tx.memoryPerson.deleteMany({ where: { memory_id: memoryId } });
       if (peopleIds.length > 0) {
         await tx.memoryPerson.createMany({
@@ -226,7 +215,7 @@ export async function updateMemoryPeople(
     });
     return updatedMemoryFromDb
       ? transformMemory(updatedMemoryFromDb as PrismaMemoryWithFullIncludes)
-      : null; // Synchronous call
+      : null;
   } catch (error) {
     console.error("❌ Error updating memory people:", error);
     throw error;
@@ -242,7 +231,6 @@ export async function updateMemoryEventAssociation(
   );
   try {
     const resultMemory = await prisma.$transaction(async (tx) => {
-      // Await transaction
       const currentMemoryWithOldEvent = await tx.memory.findUnique({
         where: { id: memoryId },
         include: {
@@ -295,7 +283,7 @@ export async function updateMemoryEventAssociation(
         throw new Error("Memory not found after update transaction.");
       return updatedMemoryFromDb;
     });
-    return transformMemory(resultMemory as PrismaMemoryWithFullIncludes); // Synchronous call
+    return transformMemory(resultMemory as PrismaMemoryWithFullIncludes);
   } catch (error) {
     console.error("❌ Error updating memory event association:", error);
     throw error;
@@ -328,7 +316,6 @@ export async function updateMemoryPlace(
     }
 
     const updatedMemoryFromDb = await prisma.$transaction(async (tx) => {
-      // Await transaction
       await tx.memoryPlace.deleteMany({ where: { memory_id: memoryId } });
       if (placeId) {
         await tx.memoryPlace.create({
@@ -351,7 +338,7 @@ export async function updateMemoryPlace(
     });
     return updatedMemoryFromDb
       ? transformMemory(updatedMemoryFromDb as PrismaMemoryWithFullIncludes)
-      : null; // Synchronous call
+      : null;
   } catch (error) {
     console.error("❌ Error updating memory place:", error);
     throw error;
@@ -365,7 +352,7 @@ export async function updateMemory(
   console.warn(
     "Using full updateMemory. Prefer granular updates for associations."
   );
-  const { title, description, date } = updates; // Only handle direct fields here for simplicity
+  const { title, description, date } = updates;
   let finalMemoryState: CustomMemoryType | null = null;
 
   if (title !== undefined || description !== undefined || date !== undefined) {
@@ -379,7 +366,6 @@ export async function updateMemory(
     updates.peopleIds !== undefined &&
     (finalMemoryState || (await getMemoryDetails(id)))
   ) {
-    // ensure memory exists
     finalMemoryState = await updateMemoryPeople(id, updates.peopleIds);
   }
   if (
@@ -418,7 +404,6 @@ export async function searchMemories(
   try {
     const memoriesFromDb: PrismaMemoryWithFullIncludes[] =
       await prisma.memory.findMany({
-        // Await Prisma
         where: {
           OR: [
             { title: { contains: query, mode: "insensitive" } },
@@ -434,7 +419,7 @@ export async function searchMemories(
         },
         orderBy: { date: "desc" },
       });
-    return memoriesFromDb.map(transformMemory); // Synchronous call
+    return memoriesFromDb.map(transformMemory);
   } catch (error) {
     console.error("❌ Error searching memories with Prisma (MongoDB):", error);
     throw error;
@@ -448,7 +433,6 @@ export async function getMemoryDetails(
   try {
     const memoryFromDb: PrismaMemoryWithFullIncludes | null =
       await prisma.memory.findUnique({
-        // Await Prisma
         where: { id },
         include: {
           people: { include: { person: true } },
@@ -457,7 +441,7 @@ export async function getMemoryDetails(
           reflections: true,
         },
       });
-    return memoryFromDb ? transformMemory(memoryFromDb) : null; // Synchronous call
+    return memoryFromDb ? transformMemory(memoryFromDb) : null;
   } catch (error) {
     console.error("❌ Error fetching memory details:", error);
     return null;
@@ -492,7 +476,6 @@ export async function addReflection(
   );
   try {
     const newReflectionFromDb = await prisma.reflection.create({
-      // Await Prisma
       data: {
         memory_id: memoryId,
         title: title.trim(),
@@ -503,7 +486,7 @@ export async function addReflection(
       where: { id: memoryId },
       data: { updated_at: new Date() },
     });
-    return transformReflection(newReflectionFromDb); // Synchronous call
+    return transformReflection(newReflectionFromDb);
   } catch (error) {
     console.error("❌ Error adding reflection:", error);
     throw error;
@@ -518,7 +501,6 @@ export async function updateReflection(
   console.log(`🔄 Updating reflection ${reflectionId} with Prisma (MongoDB)`);
   try {
     const updatedReflectionFromDb = await prisma.reflection.update({
-      // Await Prisma
       where: { id: reflectionId },
       data: {
         title: title.trim(),
@@ -538,7 +520,7 @@ export async function updateReflection(
     }
     return updatedReflectionFromDb
       ? transformReflection(updatedReflectionFromDb)
-      : null; // Synchronous call
+      : null;
   } catch (error) {
     console.error("❌ Error updating reflection:", error);
     throw error;
@@ -558,7 +540,7 @@ export async function deleteReflection(reflectionId: string): Promise<boolean> {
         data: { updated_at: new Date() },
       });
     }
-    await prisma.reflection.delete({ where: { id: reflectionId } }); // Await Prisma
+    await prisma.reflection.delete({ where: { id: reflectionId } });
     return true;
   } catch (error) {
     console.error("❌ Error deleting reflection:", error);

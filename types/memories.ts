@@ -10,6 +10,7 @@ export interface Memory {
   description?: string;
   mediaType: MediaType;
   mediaUrl: string;
+  thumbnailUrl?: string;
   mediaName: string;
   date: Date;
   dateType: string;

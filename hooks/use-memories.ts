@@ -4,6 +4,68 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Memory, MediaType } from "../types/memories";
 import type { Reflection } from "../types/reflection";
 import * as memoriesActions from "../app/actions/memories";
+import { getSignedURL } from "../app/actions/upload-helper";
+
+// --- Helper Functions ---
+
+const computeSHA256 = async (file: File) => {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+const createImageThumbnail = (
+  file: File,
+  maxWidth: number,
+  maxHeight: number
+): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        return reject(new Error("Could not get canvas context"));
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            return reject(new Error("Canvas to Blob conversion failed"));
+          }
+          const thumbnailFile = new File([blob], `thumbnail_${file.name}`, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+          resolve(thumbnailFile);
+        },
+        "image/jpeg",
+        0.8
+      );
+    };
+    img.onerror = (error) => {
+      reject(error);
+    };
+  });
+};
 
 // --- Context Types for Mutations ---
 interface MemoryMutationContext {
@@ -12,7 +74,6 @@ interface MemoryMutationContext {
 }
 
 interface ReflectionMutationContext {
-  // Though not used in onError for reflections in prev. example, good practice if it were
   previousMemory?: Memory | null;
 }
 
@@ -38,8 +99,8 @@ interface AddMemoryDTO {
   description?: string;
   mediaType: MediaType;
   mediaUrl: string;
+  thumbnailUrl?: string;
   mediaName: string;
-  mediaSize: number;
   date: Date;
   peopleIds: string[];
   placeId?: string;
@@ -50,7 +111,7 @@ interface AddMemoryWithFileDTO {
   file: File;
   memoryData: Omit<
     AddMemoryDTO,
-    "mediaType" | "mediaUrl" | "mediaName" | "mediaSize"
+    "mediaType" | "mediaUrl" | "thumbnailUrl" | "mediaName"
   >;
 }
 
@@ -101,7 +162,6 @@ export function useAddMemory() {
     onMutate: async (memoryData) => {
       await queryClient.cancelQueries({ queryKey: ["memories"] });
       const previousMemories = queryClient.getQueryData<Memory[]>(["memories"]);
-      // Optimistic update logic...
       const optimisticMemory: Memory = {
         id: `temp-${Date.now()}-${Math.random()}`,
         title: memoryData.title.trim(),
@@ -118,7 +178,6 @@ export function useAddMemory() {
         reflections: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-      
       };
       queryClient.setQueryData<Memory[]>(["memories"], (old = []) => [
         ...old,
@@ -146,48 +205,84 @@ export function useAddMemoryWithFile() {
     MemoryMutationContext
   >({
     mutationFn: async ({ file, memoryData }) => {
-      const uploadResult = await memoriesActions.uploadMemoryFile(file);
+      // 1. Get signed URL and upload the main file
+      const mainSignedURLResult = await getSignedURL({
+        fileSize: file.size,
+        fileType: file.type,
+        checksum: await computeSHA256(file),
+        fileName: file.name,
+        documentTitle: memoryData.title,
+        documentDate: memoryData.date.toISOString(),
+      });
+
+      if (mainSignedURLResult.failure) {
+        throw new Error(`S3 Main File Error: ${mainSignedURLResult.failure}`);
+      }
+
+      const { url: mainUploadUrl, uploadedFileName: mainUploadedFileName } =
+        mainSignedURLResult.success!;
+      const mainUploadResult = await fetch(mainUploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (!mainUploadResult.ok) {
+        throw new Error("Failed to upload main file to S3.");
+      }
+
+      const mediaUrl = `https://s3.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${mainUploadedFileName}`;
+      let thumbnailUrl: string | undefined = undefined;
+
+      // 2. Generate and upload thumbnail if it's an image
+      if (file.type.startsWith("image/")) {
+        try {
+          const thumbnailFile = await createImageThumbnail(file, 400, 400);
+          const thumbSignedURLResult = await getSignedURL({
+            fileSize: thumbnailFile.size,
+            fileType: thumbnailFile.type,
+            checksum: await computeSHA256(thumbnailFile),
+            fileName: thumbnailFile.name,
+            documentTitle: `thumb_${memoryData.title}`,
+            documentDate: memoryData.date.toISOString(),
+          });
+
+          if (thumbSignedURLResult.success) {
+            const {
+              url: thumbUploadUrl,
+              uploadedFileName: thumbUploadedFileName,
+            } = thumbSignedURLResult.success;
+            const thumbUploadResult = await fetch(thumbUploadUrl, {
+              method: "PUT",
+              headers: { "Content-Type": thumbnailFile.type },
+              body: thumbnailFile,
+            });
+
+            if (thumbUploadResult.ok) {
+              thumbnailUrl = `https://s3.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${thumbUploadedFileName}`;
+            } else {
+              console.warn(
+                "Thumbnail upload failed, but continuing without it."
+              );
+            }
+          }
+        } catch (thumbError) {
+          console.warn("Thumbnail generation or upload failed:", thumbError);
+        }
+      }
+
+      // 3. Save memory metadata to the database
       const fullMemoryData: AddMemoryDTO = {
         ...memoryData,
         mediaType: file.type.startsWith("image/") ? "photo" : "document",
-        mediaUrl: uploadResult.url,
-        mediaName: uploadResult.name,
-        mediaSize: uploadResult.size,
+        mediaUrl,
+        thumbnailUrl,
+        mediaName: file.name,
       };
+
       return memoriesActions.addMemory(fullMemoryData);
     },
-    onMutate: async ({ file, memoryData }) => {
-      await queryClient.cancelQueries({ queryKey: ["memories"] });
-      const previousMemories = queryClient.getQueryData<Memory[]>(["memories"]);
-      const optimisticMemory: Memory = {
-        id: `temp-${Date.now()}-${Math.random()}`,
-        title: memoryData.title.trim(),
-        description: memoryData.description?.trim(),
-        mediaType: file.type.startsWith("image/") ? "photo" : "document",
-        mediaUrl: URL.createObjectURL(file),
-        mediaName: file.name,
-        date: memoryData.date,
-        dateType: "exact",
-        peopleIds: memoryData.peopleIds,
-        placeId: memoryData.placeId,
-        eventId: memoryData.eventId,
-        reflectionIds: [],
-        reflections: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      queryClient.setQueryData<Memory[]>(["memories"], (old = []) => [
-        ...old,
-        optimisticMemory,
-      ]);
-      return { previousMemories };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousMemories) {
-        queryClient.setQueryData(["memories"], context.previousMemories);
-      }
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["memories"] });
     },
   });
@@ -409,7 +504,6 @@ export function useUpdateMemoryPlace() {
 export function useDeleteMemory() {
   const queryClient = useQueryClient();
   return useMutation<boolean, Error, string, MemoryMutationContext>({
-    // Added string for id
     mutationFn: (id: string) => memoriesActions.deleteMemory(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["memories"] });
