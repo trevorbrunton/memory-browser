@@ -97,19 +97,35 @@ interface AddMemoryServerDTO {
   eventId?: string;
 }
 
+export interface AddMemoryDTO {
+  title: string;
+  description?: string;
+  mediaType: MediaType;
+  mediaUrl: string;
+  thumbnailUrl?: string;
+  mediaName: string;
+  date: Date;
+  peopleIds: string[];
+  placeId?: string;
+  eventId?: string;
+}
+
 export async function addMemory(
-  memoryData: AddMemoryServerDTO
+  memoryData: AddMemoryDTO
 ): Promise<CustomMemoryType> {
   console.log("💾 Adding memory with Prisma (MongoDB):", memoryData.title);
   try {
     const { peopleIds, placeId, eventId, ...restOfMemoryData } = memoryData;
+
+    // FIX: Use snake_case for Prisma data
     const newMemoryFromDb: PrismaMemoryWithFullIncludes =
       await prisma.memory.create({
         data: {
-          ...restOfMemoryData, // Includes all fields from the DTO
+          title: restOfMemoryData.title,
+          description: restOfMemoryData.description,
           media_type: restOfMemoryData.mediaType,
           media_url: restOfMemoryData.mediaUrl,
-          thumbnail_url: restOfMemoryData.thumbnailUrl, // Added this field
+          thumbnail_url: restOfMemoryData.thumbnailUrl,
           media_name: restOfMemoryData.mediaName,
           date: restOfMemoryData.date,
           people:

@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Save, User, Calendar, Heart, Users, Plus, X, Settings } from "lucide-react"
 
-import { PeopleMultipleSelector } from "../../../people-multiple-selector"
-import { AttributeSelector } from "../../../components/attribute-selector"
+import { PeopleMultipleSelector } from "@/components/people-multiple-selector"
+import { AttributeSelector } from "@/components/attribute-selector"
 import type { Person, PersonAttribute } from "@/types/people"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
