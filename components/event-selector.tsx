@@ -1,26 +1,31 @@
-"use client"
+// components/event-selector.tsx
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { Check, ChevronDown, X, Plus, Calendar, Loader2, MapPin } from "lucide-react"
-import { useAddEvents } from "../hooks/use-events"
-import { usePlaces } from "../hooks/use-places"
-
-// Import or define the Place type
-import type { Place } from "../types/places" // Adjust the path as needed
-
-// Import or define the Event type
-import type { Event } from "../types/events" // Adjust the path as needed
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Check,
+  ChevronDown,
+  X,
+  Plus,
+  Calendar,
+  Loader2,
+  MapPin,
+} from "lucide-react";
+import { useAddEvents } from "../hooks/use-events";
+import { usePlaces } from "../hooks/use-places";
+import type { Place } from "../types/places";
+import type { Event } from "../types/events";
 
 interface EventSelectorProps {
-  allEvents: Event[]
-  selectedEvent?: string // Changed from selectedEvents array to single selectedEvent
-  onSelectionChange: (eventId: string) => void // Changed to pass single event ID
-  isLoading?: boolean
-  allPlaces?: Place[] // Added to display place names
+  allEvents: Event[];
+  selectedEvent?: string;
+  onSelectionChange: (eventId: string) => void;
+  isLoading?: boolean;
+  allPlaces?: Place[];
 }
 
 export function EventSelector({
@@ -28,43 +33,55 @@ export function EventSelector({
   selectedEvent,
   onSelectionChange,
   isLoading = false,
-  allPlaces = [], // Default to empty array if not provided
+  allPlaces = [],
 }: EventSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [pendingUpdates, setPendingUpdates] = useState<string[]>([])
-  const { data: places = allPlaces } = usePlaces()
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [pendingUpdates, setPendingUpdates] = useState<string[]>([]);
+  const { data: places = allPlaces } = usePlaces();
 
-  const addEventsMutation = useAddEvents()
+  const addEventsMutation = useAddEvents();
+
+  // Helper function to get place name from placeId
+  const getPlaceName = (placeId?: string): string | undefined => {
+    if (!placeId) return undefined;
+    const place = places.find((p) => p.id === placeId);
+    return place?.name;
+  };
 
   const filteredEvents = allEvents.filter(
     (event) =>
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (getPlaceName(event.placeId ?? undefined) &&
-        getPlaceName(event.placeId ?? undefined)!.toLowerCase().includes(searchTerm.toLowerCase())),
-  )
+        getPlaceName(event.placeId ?? undefined)!
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()))
+  );
 
   const canAddNew =
-    searchTerm.trim() && !allEvents.some((event) => event.title.toLowerCase() === searchTerm.trim().toLowerCase())
+    searchTerm.trim() &&
+    !allEvents.some(
+      (event) => event.title.toLowerCase() === searchTerm.trim().toLowerCase()
+    );
 
   const addNewEvent = () => {
     if (canAddNew) {
-      const newEventTitle = searchTerm.trim()
-      setPendingUpdates((prev) => [...prev, newEventTitle])
-      setSearchTerm("")
+      const newEventTitle = searchTerm.trim();
+      setPendingUpdates((prev) => [...prev, newEventTitle]);
+      setSearchTerm("");
     }
-  }
+  };
 
   const handleSelectEvent = (eventId: string) => {
     // Always replace the current selection with the new one
-    onSelectionChange(eventId)
-    setSearchTerm("")
-  }
+    onSelectionChange(eventId);
+    setSearchTerm("");
+  };
 
   const handleClearSelection = () => {
-    onSelectionChange("")
-  }
+    onSelectionChange("");
+  };
 
   const handleClose = async () => {
     if (pendingUpdates.length > 0) {
@@ -75,36 +92,27 @@ export function EventSelector({
           description: `New event: ${title}`,
           date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default to next week
           placeId: undefined, // No place by default
-          type: "exact" as const, // Use a valid type
-        }))
+          dateType: "exact" as const,
+        }));
 
-        const newEvents = await addEventsMutation.mutateAsync(eventData)
+        const newEvents = await addEventsMutation.mutateAsync(eventData);
 
         // Auto-select the first newly added event
         if (newEvents.length > 0) {
-          onSelectionChange(newEvents[0].id)
+          onSelectionChange(newEvents[0].id);
         }
 
-        setPendingUpdates([]) // Clear pending updates after successful save
+        setPendingUpdates([]); // Clear pending updates after successful save
       } catch (error) {
-        console.error("Failed to save events:", error)
+        console.error("Failed to save events:", error);
         // Keep pending updates on error so user can retry
-        return // Don't close the dialog on error
+        return; // Don't close the dialog on error
       }
     }
-    setIsOpen(false)
-  }
+    setIsOpen(false);
+  };
 
-  // Helper function to get place name from placeId
-  const getPlaceName = (placeId?: string): string | undefined => {
-    if (!placeId) return undefined
-    const place = places.find((p) => p.id === placeId)
-    return place?.name
-  }
-
-  const isSaving = addEventsMutation.isPending
-
- 
+  const isSaving = addEventsMutation.isPending;
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -112,11 +120,13 @@ export function EventSelector({
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(date)
-  }
+    }).format(date);
+  };
 
-  const selectedEventObj = allEvents.find((e) => e.id === selectedEvent)
-  const selectedEventPlace = selectedEventObj?.placeId ? getPlaceName(selectedEventObj.placeId) : undefined
+  const selectedEventObj = allEvents.find((e) => e.id === selectedEvent);
+  const selectedEventPlace = selectedEventObj?.placeId
+    ? getPlaceName(selectedEventObj.placeId)
+    : undefined;
 
   return (
     <div className="w-full space-y-3">
@@ -127,7 +137,13 @@ export function EventSelector({
         className="w-full justify-between"
         disabled={isLoading}
       >
-        <span>{isLoading ? "Loading..." : selectedEventObj ? selectedEventObj.title : "Select event..."}</span>
+        <span>
+          {isLoading
+            ? "Loading..."
+            : selectedEventObj
+            ? selectedEventObj.title
+            : "Select event..."}
+        </span>
         <ChevronDown className="h-4 w-4" />
       </Button>
 
@@ -141,14 +157,19 @@ export function EventSelector({
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && canAddNew) {
-                addNewEvent()
+                addNewEvent();
               }
             }}
           />
 
           {/* Add New Event Button */}
           {canAddNew && (
-            <Button onClick={addNewEvent} variant="outline" size="sm" className="w-full">
+            <Button
+              onClick={addNewEvent}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add "{searchTerm.trim()}"
             </Button>
@@ -172,10 +193,13 @@ export function EventSelector({
             <div className="bg-blue-50 border border-blue-200 rounded p-2">
               <p className="text-sm text-blue-700">
                 <Calendar className="h-4 w-4 inline mr-1" />
-                {pendingUpdates.length} new {pendingUpdates.length === 1 ? "event" : "events"} will be saved to database
-                when you close this dialog
+                {pendingUpdates.length} new{" "}
+                {pendingUpdates.length === 1 ? "event" : "events"} will be saved
+                to database when you close this dialog
               </p>
-              <p className="text-xs text-blue-600 mt-1">New: {pendingUpdates.join(", ")}</p>
+              <p className="text-xs text-blue-600 mt-1">
+                New: {pendingUpdates.join(", ")}
+              </p>
             </div>
           )}
 
@@ -183,7 +207,8 @@ export function EventSelector({
           {addEventsMutation.isError && (
             <div className="bg-red-50 border border-red-200 rounded p-2">
               <p className="text-sm text-red-700">
-                ❌ Failed to save events: {addEventsMutation.error?.message || "Unknown error"}
+                ❌ Failed to save events:{" "}
+                {addEventsMutation.error?.message || "Unknown error"}
               </p>
             </div>
           )}
@@ -191,11 +216,13 @@ export function EventSelector({
           {/* Events List */}
           <div className="max-h-48 overflow-y-auto space-y-1">
             {filteredEvents.length === 0 && !canAddNew && (
-              <p className="text-sm text-gray-500 text-center py-2">No events found</p>
+              <p className="text-sm text-gray-500 text-center py-2">
+                No events found
+              </p>
             )}
 
             {filteredEvents.map((event) => {
-              const placeName = getPlaceName(event.placeId ?? undefined)
+              const placeName = getPlaceName(event.placeId ?? undefined);
 
               return (
                 <div
@@ -204,7 +231,9 @@ export function EventSelector({
                   className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
                 >
                   <div className="w-4 h-4 flex items-center justify-center">
-                    {selectedEvent === event.id && <Check className="h-4 w-4 text-blue-600" />}
+                    {selectedEvent === event.id && (
+                      <Check className="h-4 w-4 text-blue-600" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{event.title}</div>
@@ -218,9 +247,8 @@ export function EventSelector({
                       )}
                     </div>
                   </div>
-
                 </div>
-              )
+              );
             })}
 
             {/* Show pending events in the list */}
@@ -234,7 +262,9 @@ export function EventSelector({
                 </div>
                 <div className="flex-1">
                   <div className="font-medium">{title}</div>
-                  <div className="text-xs text-blue-600">Will be added to database</div>
+                  <div className="text-xs text-blue-600">
+                    Will be added to database
+                  </div>
                 </div>
                 <Badge variant="secondary" className="text-xs">
                   Pending
@@ -244,7 +274,13 @@ export function EventSelector({
           </div>
 
           {/* Close Button */}
-          <Button onClick={handleClose} variant="outline" size="sm" className="w-full" disabled={isSaving}>
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={isSaving}
+          >
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -263,7 +299,9 @@ export function EventSelector({
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4 text-purple-600" />
             <div>
-              <div className="font-medium text-sm">{selectedEventObj.title}</div>
+              <div className="font-medium text-sm">
+                {selectedEventObj.title}
+              </div>
               <div className="text-xs text-gray-600">
                 {formatDate(selectedEventObj.date)}
                 {selectedEventPlace && (
@@ -275,11 +313,14 @@ export function EventSelector({
               </div>
             </div>
           </div>
-          <button onClick={handleClearSelection} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
+          <button
+            onClick={handleClearSelection}
+            className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+          >
             <X className="h-3 w-3" />
           </button>
         </div>
       )}
     </div>
-  )
+  );
 }

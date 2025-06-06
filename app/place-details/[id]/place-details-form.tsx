@@ -1,31 +1,44 @@
-"use client"
+// app/place-details/[id]/place-details-form.tsx
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Save, MapPin, Star, Users, Building, Globe, Plus, X, Settings } from "lucide-react"
-import type { Place, PlaceAttribute } from "@/types/places"
-import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
-import { AttributeSelector } from "../../../components/attribute-selector"
-import { useMutation } from "@tanstack/react-query"
-import { updatePlace } from "@/app/actions/places";
-
-
-
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Save,
+  MapPin,
+  Star,
+  Users,
+  Building,
+  Globe,
+  Plus,
+  X,
+  Settings,
+} from "lucide-react";
+import type { Place, PlaceAttribute } from "@/types/places";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { AttributeSelector } from "../../../components/attribute-selector";
+import { useUpdatePlace } from "../../../hooks/use-places"; // FIX: Import the correct hook
 
 interface PlaceDetailsFormProps {
-  place: Place
+  place: Place;
 }
 
 export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const updatePlaceMutation = useUpdatePlaceDetails()
+  const router = useRouter();
+  const { toast } = useToast();
+  const updatePlaceMutation = useUpdatePlace(); // FIX: Use the imported hook directly
 
   // Form state
   const [formData, setFormData] = useState({
@@ -37,9 +50,9 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
     capacity: place.capacity?.toString() || "",
     rating: place.rating?.toString() || "",
     attributes: place.attributes || [],
-  })
+  });
 
-  const [hasChanges, setHasChanges] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Update form data when place changes
   useEffect(() => {
@@ -52,9 +65,9 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
       capacity: place.capacity?.toString() || "",
       rating: place.rating?.toString() || "",
       attributes: place.attributes || [],
-    })
-    setHasChanges(false)
-  }, [place])
+    });
+    setHasChanges(false);
+  }, [place]);
 
   // Check for changes
   useEffect(() => {
@@ -66,14 +79,18 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
       formData.type !== (place.type || "office") ||
       formData.capacity !== (place.capacity?.toString() || "") ||
       formData.rating !== (place.rating?.toString() || "") ||
-      JSON.stringify(formData.attributes) !== JSON.stringify(place.attributes || [])
+      JSON.stringify(formData.attributes) !==
+        JSON.stringify(place.attributes || []);
 
-    setHasChanges(hasFormChanges)
-  }, [formData, place])
+    setHasChanges(hasFormChanges);
+  }, [formData, place]);
 
-  const handleInputChange = (field: string, value: string | PlaceAttribute[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  const handleInputChange = (
+    field: string,
+    value: string | PlaceAttribute[]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
@@ -81,12 +98,12 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
         title: "Error",
         description: "Place name is required",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
-      console.log("Saving place details...", formData)
+      console.log("Saving place details...", formData);
 
       const updates = {
         name: formData.name.trim(),
@@ -94,36 +111,42 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
         city: formData.city.trim(),
         country: formData.country.trim(),
         type: formData.type as Place["type"],
-        capacity: formData.capacity ? Number.parseInt(formData.capacity) : undefined,
-        rating: formData.rating ? Number.parseFloat(formData.rating) : undefined,
+        capacity: formData.capacity
+          ? Number.parseInt(formData.capacity)
+          : undefined,
+        rating: formData.rating
+          ? Number.parseFloat(formData.rating)
+          : undefined,
         attributes: formData.attributes,
-      }
+      };
 
-      console.log("Updates to be sent:", updates)
+      console.log("Updates to be sent:", updates);
 
       const result = await updatePlaceMutation.mutateAsync({
         id: place.id,
         updates,
-      })
+      });
 
-      console.log("Update result:", result)
+      console.log("Update result:", result);
 
       toast({
         title: "Success",
         description: "Place details updated successfully",
-      })
+      });
 
       // Navigate back to main page after successful save
-      router.push("/")
+      router.push("/");
     } catch (error) {
-      console.error("Failed to update place:", error)
+      console.error("Failed to update place:", error);
       toast({
         title: "Error",
-        description: `Failed to update place details: ${error instanceof Error ? error.message : "Unknown error"}`,
+        description: `Failed to update place details: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const getPlaceTypeColor = (type: Place["type"]) => {
     const colors = {
@@ -134,35 +157,43 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
       park: "bg-emerald-100 text-emerald-800",
       museum: "bg-amber-100 text-amber-800",
       store: "bg-orange-100 text-orange-800",
-    }
-    return colors[type] || "bg-gray-100 text-gray-800"
-  }
+    };
+    return colors[type] || "bg-gray-100 text-gray-800";
+  };
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+        className={`h-4 w-4 ${
+          i < Math.floor(rating)
+            ? "fill-yellow-400 text-yellow-400"
+            : "text-gray-300"
+        }`}
       />
-    ))
-  }
+    ));
+  };
 
   // Attribute management functions
   const addAttribute = () => {
-    const newAttribute: PlaceAttribute = { attribute: "", value: "" }
-    handleInputChange("attributes", [...formData.attributes, newAttribute])
-  }
+    const newAttribute: PlaceAttribute = { attribute: "", value: "" };
+    handleInputChange("attributes", [...formData.attributes, newAttribute]);
+  };
 
-  const updateAttribute = (index: number, field: "attribute" | "value", value: string) => {
-    const updatedAttributes = [...formData.attributes]
-    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value }
-    handleInputChange("attributes", updatedAttributes)
-  }
+  const updateAttribute = (
+    index: number,
+    field: "attribute" | "value",
+    value: string
+  ) => {
+    const updatedAttributes = [...formData.attributes];
+    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value };
+    handleInputChange("attributes", updatedAttributes);
+  };
 
   const removeAttribute = (index: number) => {
-    const updatedAttributes = formData.attributes.filter((_, i) => i !== index)
-    handleInputChange("attributes", updatedAttributes)
-  }
+    const updatedAttributes = formData.attributes.filter((_, i) => i !== index);
+    handleInputChange("attributes", updatedAttributes);
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -179,7 +210,9 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
                 {place.name.charAt(0).toUpperCase()}
               </div>
               <h4 className="font-medium text-lg">{place.name}</h4>
-              <Badge className={`mt-2 ${getPlaceTypeColor(place.type)}`}>{place.type}</Badge>
+              <Badge className={`mt-2 ${getPlaceTypeColor(place.type)}`}>
+                {place.type}
+              </Badge>
             </div>
 
             <div className="space-y-2 text-sm">
@@ -203,8 +236,12 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
               )}
               {formData.rating && (
                 <div className="flex items-center text-gray-600">
-                  <div className="flex mr-2">{renderStars(Number.parseFloat(formData.rating))}</div>
-                  <span>{Number.parseFloat(formData.rating).toFixed(1)} rating</span>
+                  <div className="flex mr-2">
+                    {renderStars(Number.parseFloat(formData.rating))}
+                  </div>
+                  <span>
+                    {Number.parseFloat(formData.rating).toFixed(1)} rating
+                  </span>
                 </div>
               )}
             </div>
@@ -212,12 +249,19 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
             <div className="mt-4 p-3 bg-gray-50 rounded">
               <h5 className="font-medium text-sm mb-2">Quick Info</h5>
               <div className="text-xs text-gray-600 space-y-1">
-                <div>Type: {place.type.charAt(0).toUpperCase() + place.type.slice(1)}</div>
+                <div>
+                  Type:{" "}
+                  {place.type.charAt(0).toUpperCase() + place.type.slice(1)}
+                </div>
                 <div>
                   Location: {place.city}, {place.country}
                 </div>
-                {place.capacity && <div>Max Capacity: {place.capacity} people</div>}
-                {place.rating && <div>Rating: {place.rating.toFixed(1)}/5.0</div>}
+                {place.capacity && (
+                  <div>Max Capacity: {place.capacity} people</div>
+                )}
+                {place.rating && (
+                  <div>Rating: {place.rating.toFixed(1)}/5.0</div>
+                )}
               </div>
             </div>
           </div>
@@ -244,7 +288,10 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Place Type</Label>
-              <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleInputChange("type", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select place type" />
                 </SelectTrigger>
@@ -349,16 +396,22 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
           <div className="space-y-4">
             {formData.attributes.length === 0 ? (
               <p className="text-sm text-gray-500 italic text-center py-4">
-                No additional attributes. Click "Add Attribute" to add amenities, policies, or other details.
+                No additional attributes. Click "Add Attribute" to add
+                amenities, policies, or other details.
               </p>
             ) : (
               formData.attributes.map((attr, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg">
+                <div
+                  key={index}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg"
+                >
                   <div className="space-y-2">
                     <Label>Attribute</Label>
                     <AttributeSelector
                       value={attr.attribute}
-                      onChange={(value) => updateAttribute(index, "attribute", value)}
+                      onChange={(value) =>
+                        updateAttribute(index, "attribute", value)
+                      }
                       placeholder="Select or add attribute..."
                       entityType="place"
                     />
@@ -377,7 +430,9 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
                     </div>
                     <Input
                       value={attr.value}
-                      onChange={(e) => updateAttribute(index, "value", e.target.value)}
+                      onChange={(e) =>
+                        updateAttribute(index, "value", e.target.value)
+                      }
                       placeholder="Enter value..."
                     />
                   </div>
@@ -407,21 +462,29 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
           <h3 className="font-semibold mb-4">Place Statistics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-blue-600">{formData.capacity || 0}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {formData.capacity || 0}
+              </div>
               <div className="text-sm text-gray-600">Capacity</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-yellow-600">
-                {formData.rating ? Number.parseFloat(formData.rating).toFixed(1) : "N/A"}
+                {formData.rating
+                  ? Number.parseFloat(formData.rating).toFixed(1)
+                  : "N/A"}
               </div>
               <div className="text-sm text-gray-600">Rating</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-600">{new Date(place.createdAt).toLocaleDateString()}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {new Date(place.createdAt).toLocaleDateString()}
+              </div>
               <div className="text-sm text-gray-600">Created</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-orange-600">{new Date(place.updatedAt).toLocaleDateString()}</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {new Date(place.updatedAt).toLocaleDateString()}
+              </div>
               <div className="text-sm text-gray-600">Last Updated</div>
             </div>
           </div>
@@ -451,21 +514,12 @@ export function PlaceDetailsForm({ place }: PlaceDetailsFormProps) {
         {hasChanges && (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
             <p className="text-sm text-yellow-700">
-              You have unsaved changes. Click "Save Changes" to update the place details.
+              You have unsaved changes. Click "Save Changes" to update the place
+              details.
             </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
-
-
-function useUpdatePlaceDetails() {
-  return useMutation({
-    mutationFn: async ({ id, updates }: { id: Place["id"]; updates: Partial<Place> }) => {
-      return updatePlace(id, updates)
-    },
-  })
-}
-

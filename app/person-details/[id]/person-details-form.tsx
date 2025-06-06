@@ -1,32 +1,45 @@
-"use client"
+// app/person-details/[id]/person-details-form.tsx
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Save, User, Calendar, Heart, Users, Plus, X, Settings } from "lucide-react"
-
-import { PeopleMultipleSelector } from "@/components/people-multiple-selector"
-import { AttributeSelector } from "@/components/attribute-selector"
-import type { Person, PersonAttribute } from "@/types/people"
-import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
-
-
-
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Save,
+  User,
+  Calendar,
+  Heart,
+  Users,
+  Plus,
+  X,
+  Settings,
+} from "lucide-react";
+import { usePeople, useUpdatePerson } from "../../../hooks/use-people"; // FIX: Import the correct hooks
+import { PeopleMultipleSelector } from "@/components/people-multiple-selector";
+import { AttributeSelector } from "@/components/attribute-selector";
+import type { Person, PersonAttribute } from "@/types/people";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 interface PersonDetailsFormProps {
-  person: Person
+  person: Person;
 }
 
 export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const { data: allPeople = [] } = usePeople()
-  const updatePersonMutation = useUpdatePersonDetails()
+  const router = useRouter();
+  const { toast } = useToast();
+  const { data: allPeople = [] } = usePeople();
+  const updatePersonMutation = useUpdatePerson(); // FIX: Use the imported hook
 
   // Form state
   const [formData, setFormData] = useState({
@@ -39,9 +52,9 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
     spouseId: person.spouseId || "",
     childrenIds: person.childrenIds || [],
     attributes: person.attributes || [],
-  })
+  });
 
-  const [hasChanges, setHasChanges] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Update form data when person changes
   useEffect(() => {
@@ -55,9 +68,9 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
       spouseId: person.spouseId || "",
       childrenIds: person.childrenIds || [],
       attributes: person.attributes || [],
-    })
-    setHasChanges(false)
-  }, [person])
+    });
+    setHasChanges(false);
+  }, [person]);
 
   // Check for changes
   useEffect(() => {
@@ -69,73 +82,83 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
       formData.placeOfBirth !== (person.placeOfBirth || "") ||
       formData.maritalStatus !== (person.maritalStatus || "single") ||
       formData.spouseId !== (person.spouseId || "") ||
-      JSON.stringify(formData.childrenIds) !== JSON.stringify(person.childrenIds || []) ||
-      JSON.stringify(formData.attributes) !== JSON.stringify(person.attributes || [])
+      JSON.stringify(formData.childrenIds) !==
+        JSON.stringify(person.childrenIds || []) ||
+      JSON.stringify(formData.attributes) !==
+        JSON.stringify(person.attributes || []);
 
-    setHasChanges(hasFormChanges)
-  }, [formData, person])
+    setHasChanges(hasFormChanges);
+  }, [formData, person]);
 
-  const handleInputChange = (field: string, value: string | string[] | PersonAttribute[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  const handleInputChange = (
+    field: string,
+    value: string | string[] | PersonAttribute[]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSave = async () => {
     try {
       const updates = {
         ...formData,
         // Clear spouse if not married
-        spouseId: formData.maritalStatus === "married" ? formData.spouseId : undefined,
-      }
+        spouseId:
+          formData.maritalStatus === "married" ? formData.spouseId : undefined,
+      };
 
       await updatePersonMutation.mutateAsync({
         id: person.id,
         updates,
-      })
+      });
 
       toast({
         title: "Success",
         description: "Person details updated successfully",
-      })
+      });
 
       // Navigate back to main page after successful save
-      router.push("/")
+      router.push("/");
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update person details",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Attribute management functions
   const addAttribute = () => {
-    const newAttribute: PersonAttribute = { attribute: "", value: "" }
-    handleInputChange("attributes", [...formData.attributes, newAttribute])
-  }
+    const newAttribute: PersonAttribute = { attribute: "", value: "" };
+    handleInputChange("attributes", [...formData.attributes, newAttribute]);
+  };
 
-  const updateAttribute = (index: number, field: "attribute" | "value", value: string) => {
-    const updatedAttributes = [...formData.attributes]
-    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value }
-    handleInputChange("attributes", updatedAttributes)
-  }
+  const updateAttribute = (
+    index: number,
+    field: "attribute" | "value",
+    value: string
+  ) => {
+    const updatedAttributes = [...formData.attributes];
+    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value };
+    handleInputChange("attributes", updatedAttributes);
+  };
 
   const removeAttribute = (index: number) => {
-    const updatedAttributes = formData.attributes.filter((_, i) => i !== index)
-    handleInputChange("attributes", updatedAttributes)
-  }
+    const updatedAttributes = formData.attributes.filter((_, i) => i !== index);
+    handleInputChange("attributes", updatedAttributes);
+  };
 
   // Get spouse options (exclude current person and children)
   const spouseOptions = allPeople
     .filter((p) => p.id !== person.id && !formData.childrenIds.includes(p.id))
-    .map((p) => ({ label: p.name, value: p.id }))
+    .map((p) => ({ label: p.name, value: p.id }));
 
   // Get children options (exclude current person and spouse)
   const childrenOptions = allPeople
     .filter((p) => p.id !== person.id && p.id !== formData.spouseId)
-    .map((p) => ({ label: p.name, value: p.id }))
+    .map((p) => ({ label: p.name, value: p.id }));
 
-  const spouse = allPeople.find((p) => p.id === formData.spouseId)
+  const spouse = allPeople.find((p) => p.id === formData.spouseId);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -231,7 +254,9 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
                 id="dateOfBirth"
                 type="date"
                 value={formData.dateOfBirth}
-                onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("dateOfBirth", e.target.value)
+                }
               />
             </div>
             <div className="space-y-2">
@@ -239,7 +264,9 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
               <Input
                 id="placeOfBirth"
                 value={formData.placeOfBirth}
-                onChange={(e) => handleInputChange("placeOfBirth", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("placeOfBirth", e.target.value)
+                }
                 placeholder="Enter place of birth"
               />
             </div>
@@ -257,7 +284,9 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
               <Label htmlFor="maritalStatus">Marital Status</Label>
               <Select
                 value={formData.maritalStatus}
-                onValueChange={(value) => handleInputChange("maritalStatus", value)}
+                onValueChange={(value) =>
+                  handleInputChange("maritalStatus", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select marital status" />
@@ -274,12 +303,19 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
             {formData.maritalStatus === "married" && (
               <div className="space-y-2">
                 <Label htmlFor="spouse">Spouse</Label>
-                <Select value={formData.spouseId} onValueChange={(value) => handleInputChange("spouseId", value)}>
+                <Select
+                  value={formData.spouseId}
+                  onValueChange={(value) =>
+                    handleInputChange("spouseId", value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select spouse" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="no-spouse">No spouse selected</SelectItem>
+                    <SelectItem value="no-spouse">
+                      No spouse selected
+                    </SelectItem>
                     {spouseOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -289,7 +325,8 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
                 </Select>
                 {spouse && (
                   <p className="text-sm text-gray-600">
-                    Currently married to: <span className="font-medium">{spouse.name}</span>
+                    Currently married to:{" "}
+                    <span className="font-medium">{spouse.name}</span>
                   </p>
                 )}
               </div>
@@ -310,8 +347,8 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
                   <p className="font-medium">Children:</p>
                   <ul className="list-disc list-inside ml-2">
                     {formData.childrenIds.map((childId) => {
-                      const child = allPeople.find((p) => p.id === childId)
-                      return <li key={childId}>{child?.name || "Unknown"}</li>
+                      const child = allPeople.find((p) => p.id === childId);
+                      return <li key={childId}>{child?.name || "Unknown"}</li>;
                     })}
                   </ul>
                 </div>
@@ -336,16 +373,22 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
           <div className="space-y-4">
             {formData.attributes.length === 0 ? (
               <p className="text-sm text-gray-500 italic text-center py-4">
-                No additional attributes. Click "Add Attribute" to add demographic or personal details.
+                No additional attributes. Click "Add Attribute" to add
+                demographic or personal details.
               </p>
             ) : (
               formData.attributes.map((attr, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg">
+                <div
+                  key={index}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg"
+                >
                   <div className="space-y-2">
                     <Label>Attribute</Label>
                     <AttributeSelector
                       value={attr.attribute}
-                      onChange={(value) => updateAttribute(index, "attribute", value)}
+                      onChange={(value) =>
+                        updateAttribute(index, "attribute", value)
+                      }
                       placeholder="Select or add attribute..."
                       entityType="person"
                     />
@@ -364,7 +407,9 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
                     </div>
                     <Input
                       value={attr.value}
-                      onChange={(e) => updateAttribute(index, "value", e.target.value)}
+                      onChange={(e) =>
+                        updateAttribute(index, "value", e.target.value)
+                      }
                       placeholder="Enter value..."
                     />
                   </div>
@@ -413,56 +458,12 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
         {hasChanges && (
           <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
             <p className="text-sm text-yellow-700">
-              You have unsaved changes. Click "Save Changes" to update the person details.
+              You have unsaved changes. Click "Save Changes" to update the
+              person details.
             </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
-function usePeople(): { data?: Person[] } {
-  const [data, setData] = useState<Person[] | undefined>(undefined)
-
-  useEffect(() => {
-    async function fetchPeople() {
-      try {
-        const res = await fetch("/api/people")
-        if (!res.ok) throw new Error("Failed to fetch people")
-        const people = await res.json()
-        setData(people)
-      } catch {
-        setData([])
-      }
-    }
-    fetchPeople()
-  }, [])
-
-  return { data }
-}
-type UpdatePersonArgs = {
-  id: string
-  updates: Partial<Person>
-}
-
-function useUpdatePersonDetails() {
-  const [isPending, setIsPending] = useState(false)
-
-  async function mutateAsync({ id, updates }: UpdatePersonArgs) {
-    setIsPending(true)
-    try {
-      const res = await fetch(`/api/people/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      })
-      if (!res.ok) throw new Error("Failed to update person")
-      return await res.json()
-    } finally {
-      setIsPending(false)
-    }
-  }
-
-  return { mutateAsync, isPending }
-}
-

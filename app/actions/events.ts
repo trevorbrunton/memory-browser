@@ -58,7 +58,7 @@ interface AddEventServerDTO {
   description?: string;
   date: Date;
   placeId?: string;
-  type?: CustomEventType["dateType"];
+  dateType?: CustomEventType["dateType"]; // FIX: Changed 'type' to 'dateType'
 }
 
 export async function addEvents(
@@ -76,7 +76,7 @@ export async function addEvents(
           title: data.title.trim(),
           description: data.description,
           date: data.date,
-          type: data.type || "exact",
+          type: data.dateType || "exact", // FIX: Changed 'data.type' to 'data.dateType'
           ...(data.placeId ? { place: { connect: { id: data.placeId } } } : {}),
         },
         include: {
@@ -96,7 +96,6 @@ export async function addEvents(
     );
   }
 }
-
 export async function updateEvent(
   eventId: string,
   updates: Partial<Omit<CustomEventType, "id" | "createdAt" | "updatedAt">>

@@ -13,12 +13,11 @@ interface EventMutationContext {
 
 // --- DTOs for Mutations ---
 interface AddEventsDTO {
-  // Matches the input for the addEvents server action
   title: string;
   description?: string;
   date: Date;
   placeId?: string;
-  type?: CustomEventType["dateType"]; // Based on your CustomEventType
+  dateType?: CustomEventType["dateType"]; // FIX: Changed 'type' to 'dateType'
 }
 
 interface UpdateEventDTO {
@@ -68,7 +67,7 @@ export function useAddEvents() {
           title: data.title,
           description: data.description,
           date: data.date,
-          dateType: data.type || "exact", // Default if not provided
+          dateType: data.dateType || "exact", // FIX: Changed 'data.type' to 'data.dateType'
           placeId: data.placeId,
           attributes: [],
           createdAt: new Date(),
@@ -92,7 +91,6 @@ export function useAddEvents() {
     },
   });
 }
-
 export function useUpdateEventDetails() {
   const queryClient = useQueryClient();
   return useMutation<
