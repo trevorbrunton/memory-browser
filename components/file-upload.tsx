@@ -124,12 +124,12 @@ export function FileUpload({
   }
 
   const getFileIcon = () => {
-    if (!file) return <UploadIcon className="h-12 w-12 text-gray-400" />
+    if (!file) return <UploadIcon className="h-8 w-8 text-slate-400" />
 
     if (file.type.startsWith("image/")) {
-      return <ImageIcon className="h-12 w-12 text-blue-500" />
+      return <ImageIcon className="h-8 w-8 text-slate-600" />
     } else {
-      return <FileIcon className="h-12 w-12 text-orange-500" />
+      return <FileIcon className="h-8 w-8 text-slate-600" />
     }
   }
 
@@ -137,8 +137,8 @@ export function FileUpload({
     <div className={`w-full ${className}`}>
       {!file ? (
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
+          className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
+            isDragging ? "border-slate-400 bg-slate-100" : "border-slate-200 hover:border-slate-300"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -146,28 +146,39 @@ export function FileUpload({
           onClick={handleButtonClick}
         >
           <input ref={fileInputRef} type="file" className="hidden" accept={accept} onChange={handleFileChange} />
-          <div className="flex flex-col items-center justify-center space-y-3">
-            <UploadIcon className="h-12 w-12 text-gray-400" />
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <div className="p-2 bg-slate-100 rounded-full">
+              <UploadIcon className="h-8 w-8 text-slate-500" />
+            </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium">Drag and drop your file here or click to browse</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm font-medium text-slate-700">
+                {isDragging ? "Drop your file here" : "Drag and drop your file here"}
+              </p>
+              <p className="text-xs text-slate-500">or click to browse your files</p>
+              <p className="text-xs text-slate-400 bg-slate-50 rounded-full px-2 py-0.5 inline-block mt-1">
                 Supports {accept.replace(/,/g, ", ")} up to {maxSize / 1048576}MB
               </p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="border rounded-lg p-4">
-          <div className="flex items-center space-x-4">
-            {getFileIcon()}
+        <div className="border border-slate-200 rounded-md p-3 bg-slate-50">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-slate-100 rounded-md">{getFileIcon()}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{file.name}</p>
-              <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-              <div className="mt-2">
-                <Progress value={uploadProgress} className="h-2" />
+              <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+              <p className="text-xs text-slate-500 mb-1">{formatFileSize(file.size)}</p>
+              <div className="space-y-1">
+                <Progress value={uploadProgress} className="h-1.5 bg-slate-200" />
+                <p className="text-xs text-slate-500">{uploadProgress}% uploaded</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full" onClick={handleRemoveFile}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full hover:bg-slate-200 hover:text-slate-700"
+              onClick={handleRemoveFile}
+            >
               <XIcon className="h-4 w-4" />
               <span className="sr-only">Remove file</span>
             </Button>
@@ -175,7 +186,11 @@ export function FileUpload({
         </div>
       )}
 
-      {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
+      {error && (
+        <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded-md">
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      )}
     </div>
   )
 }

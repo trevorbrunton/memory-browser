@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Check, ChevronDown, X, Plus, MapPin, Loader2, Star } from "lucide-react"
+import { Check, ChevronDown, X, Plus, MapPin, Loader2, Star, Building } from "lucide-react"
 import type { Place } from "@/types/places"
 import { useAddPlaces } from "../hooks/use-places"
 
@@ -84,23 +84,23 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
 
   const getPlaceTypeColor = (type: Place["type"]) => {
     const colors = {
-      office: "bg-blue-100 text-blue-800",
-      restaurant: "bg-red-100 text-red-800",
-      hotel: "bg-purple-100 text-purple-800",
-      venue: "bg-green-100 text-green-800",
-      park: "bg-emerald-100 text-emerald-800",
-      museum: "bg-amber-100 text-amber-800",
-      store: "bg-orange-100 text-orange-800",
+      office: "bg-slate-100 text-slate-700",
+      restaurant: "bg-slate-100 text-slate-700",
+      hotel: "bg-slate-100 text-slate-700",
+      venue: "bg-slate-100 text-slate-700",
+      park: "bg-slate-100 text-slate-700",
+      museum: "bg-slate-100 text-slate-700",
+      store: "bg-slate-100 text-slate-700",
     }
-    return colors[type] || "bg-gray-100 text-gray-800"
+    return colors[type] || "bg-slate-100 text-slate-700"
   }
 
   const renderRating = (rating?: number) => {
     if (!rating) return null
     return (
-      <div className="flex items-center gap-1">
-        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-        <span className="text-xs text-gray-600">{rating.toFixed(1)}</span>
+      <div className="flex items-center gap-0.5">
+        <Star className="h-2 w-2 fill-amber-400 text-amber-400" />
+        <span className="text-[10px] text-slate-600">{rating.toFixed(1)}</span>
       </div>
     )
   }
@@ -108,21 +108,24 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
   const selectedPlaceObj = allPlaces.find((p) => p.id === selectedPlace)
 
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-2">
       {/* Trigger Button */}
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full justify-between"
+        className="w-full justify-between h-8 text-xs border-slate-200"
         disabled={isLoading}
       >
-        <span>{isLoading ? "Loading..." : selectedPlaceObj ? selectedPlaceObj.name : "Select place..."}</span>
-        <ChevronDown className="h-4 w-4" />
+        <div className="flex items-center space-x-1">
+          <Building className="h-3 w-3 text-slate-500" />
+          <span>{isLoading ? "Loading..." : selectedPlaceObj ? selectedPlaceObj.name : "Select place..."}</span>
+        </div>
+        <ChevronDown className="h-3 w-3 text-slate-400" />
       </Button>
 
       {/* Dropdown */}
       {isOpen && (
-        <Card className="p-3 space-y-3">
+        <Card className="p-3 space-y-3 shadow-sm border-slate-200">
           {/* Search Input */}
           <Input
             placeholder="Search or add new place..."
@@ -133,12 +136,18 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
                 addNewPlace()
               }
             }}
+            className="h-8 text-xs border-slate-200"
           />
 
           {/* Add New Place Button */}
           {canAddNew && (
-            <Button onClick={addNewPlace} variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button
+              onClick={addNewPlace}
+              variant="outline"
+              size="sm"
+              className="w-full h-7 text-xs border-dashed border-slate-300 text-slate-600"
+            >
+              <Plus className="h-3 w-3 mr-1" />
               Add "{searchTerm.trim()}"
             </Button>
           )}
@@ -149,60 +158,67 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
               onClick={handleClearSelection}
               variant="outline"
               size="sm"
-              className="w-full text-red-600 hover:text-red-700"
+              className="w-full h-7 text-xs text-slate-600 border-slate-200"
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-3 w-3 mr-1" />
               Clear Selection
             </Button>
           )}
 
           {/* Pending Updates Indicator */}
           {pendingUpdates.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded p-2">
-              <p className="text-sm text-blue-700">
-                <MapPin className="h-4 w-4 inline mr-1" />
-                {pendingUpdates.length} new {pendingUpdates.length === 1 ? "place" : "places"} will be saved to database
-                when you close this dialog
+            <div className="bg-slate-50 border border-slate-200 rounded p-2 text-xs">
+              <p className="text-slate-700 flex items-center">
+                <MapPin className="h-3 w-3 mr-1" />
+                {pendingUpdates.length} new {pendingUpdates.length === 1 ? "place" : "places"} will be saved
               </p>
-              <p className="text-xs text-blue-600 mt-1">New: {pendingUpdates.join(", ")}</p>
+              <p className="text-slate-600 mt-1 bg-white rounded px-1.5 py-0.5 text-xs">
+                New: {pendingUpdates.join(", ")}
+              </p>
             </div>
           )}
 
           {/* Error Message */}
           {addPlacesMutation.isError && (
-            <div className="bg-red-50 border border-red-200 rounded p-2">
-              <p className="text-sm text-red-700">
-                ❌ Failed to save places: {addPlacesMutation.error?.message || "Unknown error"}
+            <div className="bg-red-50 border border-red-100 rounded p-2">
+              <p className="text-xs text-red-600">
+                Failed to save places: {addPlacesMutation.error?.message || "Unknown error"}
               </p>
             </div>
           )}
 
           {/* Places List */}
-          <div className="max-h-48 overflow-y-auto space-y-1">
+          <div className="max-h-40 overflow-y-auto space-y-1">
             {filteredPlaces.length === 0 && !canAddNew && (
-              <p className="text-sm text-gray-500 text-center py-2">No places found</p>
+              <p className="text-xs text-slate-500 text-center py-3">No places found</p>
             )}
 
             {filteredPlaces.map((place) => (
               <div
                 key={place.id}
                 onClick={() => handleSelectPlace(place.id)}
-                className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
+                className="flex items-center space-x-2 p-1.5 rounded hover:bg-slate-50 cursor-pointer"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
-                  {selectedPlace === place.id && <Check className="h-4 w-4 text-blue-600" />}
+                  {selectedPlace === place.id && (
+                    <div className="w-3 h-3 bg-slate-700 rounded-sm flex items-center justify-center">
+                      <Check className="h-2 w-2 text-white" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium">{place.name}</div>
-                  <div className="text-xs text-gray-500 flex items-center gap-2">
+                  <div className="text-xs font-medium text-slate-700">{place.name}</div>
+                  <div className="text-[10px] text-slate-500 flex items-center gap-1">
                     <span>
                       {place.city}, {place.country}
                     </span>
-                    {place.capacity && <span>• {place.capacity} capacity</span>}
+                    {place.capacity && <span>• {place.capacity}</span>}
                     {renderRating(place.rating)}
                   </div>
                 </div>
-                <Badge className={`text-xs ${getPlaceTypeColor(place.type)}`}>{place.type}</Badge>
+                <Badge className={`text-[10px] border-0 px-1 py-0 ${getPlaceTypeColor(place.type)}`}>
+                  {place.type}
+                </Badge>
               </div>
             ))}
 
@@ -210,16 +226,18 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
             {pendingUpdates.map((name) => (
               <div
                 key={`pending-${name}`}
-                className="flex items-center space-x-2 p-2 rounded bg-blue-50 border-blue-200"
+                className="flex items-center space-x-2 p-1.5 rounded bg-slate-50 border border-slate-200"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
-                  <Check className="h-4 w-4 text-blue-600" />
+                  <div className="w-3 h-3 bg-slate-700 rounded-sm flex items-center justify-center">
+                    <Check className="h-2 w-2 text-white" />
+                  </div>
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium">{name}</div>
-                  <div className="text-xs text-blue-600">Will be added to database</div>
+                  <div className="text-xs font-medium text-slate-700">{name}</div>
+                  <div className="text-[10px] text-slate-600">Will be added to database</div>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-[10px] bg-slate-100 text-slate-600 px-1 py-0">
                   Pending
                 </Badge>
               </div>
@@ -227,11 +245,17 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
           </div>
 
           {/* Close Button */}
-          <Button onClick={handleClose} variant="outline" size="sm" className="w-full" disabled={isSaving}>
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size="sm"
+            className="w-full h-7 text-xs bg-slate-50 border-slate-200"
+            disabled={isSaving}
+          >
             {isSaving ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving to Database...
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Saving...
               </>
             ) : (
               "Done"
@@ -242,18 +266,18 @@ export function PlaceSelector({ allPlaces, selectedPlace, onSelectionChange, isL
 
       {/* Selected Place Badge */}
       {selectedPlaceObj && (
-        <div className="flex items-center justify-between p-2 bg-green-50 rounded border">
+        <div className="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-200">
           <div className="flex items-center space-x-2">
-            <MapPin className="h-4 w-4 text-green-600" />
+            <MapPin className="h-3 w-3 text-slate-500" />
             <div>
-              <div className="font-medium text-sm">{selectedPlaceObj.name}</div>
-              <div className="text-xs text-gray-600">
+              <div className="text-xs font-medium text-slate-700">{selectedPlaceObj.name}</div>
+              <div className="text-[10px] text-slate-500">
                 {selectedPlaceObj.city}, {selectedPlaceObj.country}
               </div>
             </div>
           </div>
-          <button onClick={handleClearSelection} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
-            <X className="h-3 w-3" />
+          <button onClick={handleClearSelection} className="hover:bg-slate-200 rounded-full p-1">
+            <X className="h-3 w-3 text-slate-500" />
           </button>
         </div>
       )}

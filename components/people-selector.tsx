@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Check, ChevronDown, X, Plus, Database, Loader2 } from "lucide-react"
+import { Check, ChevronDown, X, Plus, Database, Loader2, Users } from "lucide-react"
 import type { Person } from "@/types/people"
 import { useAddPeople } from "../hooks/use-people"
 
@@ -76,27 +76,30 @@ export function PeopleSelector({
   const isSaving = addPeopleMutation.isPending
 
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-2">
       {/* Trigger Button */}
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full justify-between"
+        className="w-full justify-between h-8 text-xs border-slate-200"
         disabled={isLoading}
       >
-        <span>
-          {isLoading
-            ? "Loading..."
-            : selectedPeople.length > 0
-              ? `${selectedPeople.length} people selected`
-              : "Select people..."}
-        </span>
-        <ChevronDown className="h-4 w-4" />
+        <div className="flex items-center space-x-1">
+          <Users className="h-3 w-3 text-slate-500" />
+          <span>
+            {isLoading
+              ? "Loading..."
+              : selectedPeople.length > 0
+                ? `${selectedPeople.length} people selected`
+                : "Select people..."}
+          </span>
+        </div>
+        <ChevronDown className="h-3 w-3 text-slate-400" />
       </Button>
 
       {/* Dropdown */}
       {isOpen && (
-        <Card className="p-3 space-y-3">
+        <Card className="p-3 space-y-3 shadow-sm border-slate-200">
           {/* Search Input */}
           <Input
             placeholder="Search or add new person..."
@@ -107,57 +110,68 @@ export function PeopleSelector({
                 addNewPerson()
               }
             }}
+            className="h-8 text-xs border-slate-200"
           />
 
           {/* Add New Person Button */}
           {canAddNew && (
-            <Button onClick={addNewPerson} variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button
+              onClick={addNewPerson}
+              variant="outline"
+              size="sm"
+              className="w-full h-7 text-xs border-dashed border-slate-300 text-slate-600"
+            >
+              <Plus className="h-3 w-3 mr-1" />
               Add "{searchTerm.trim()}"
             </Button>
           )}
 
           {/* Pending Updates Indicator */}
           {pendingUpdates.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded p-2">
-              <p className="text-sm text-blue-700">
-                <Database className="h-4 w-4 inline mr-1" />
-                {pendingUpdates.length} new {pendingUpdates.length === 1 ? "person" : "people"} will be saved to
-                database when you close this dialog
+            <div className="bg-slate-50 border border-slate-200 rounded p-2 text-xs">
+              <p className="text-slate-700 flex items-center">
+                <Database className="h-3 w-3 mr-1" />
+                {pendingUpdates.length} new {pendingUpdates.length === 1 ? "person" : "people"} will be saved
               </p>
-              <p className="text-xs text-blue-600 mt-1">New: {pendingUpdates.join(", ")}</p>
+              <p className="text-slate-600 mt-1 bg-white rounded px-1.5 py-0.5 text-xs">
+                New: {pendingUpdates.join(", ")}
+              </p>
             </div>
           )}
 
           {/* Error Message */}
           {addPeopleMutation.isError && (
-            <div className="bg-red-50 border border-red-200 rounded p-2">
-              <p className="text-sm text-red-700">
-                ❌ Failed to save people: {addPeopleMutation.error?.message || "Unknown error"}
+            <div className="bg-red-50 border border-red-100 rounded p-2">
+              <p className="text-xs text-red-600">
+                Failed to save people: {addPeopleMutation.error?.message || "Unknown error"}
               </p>
             </div>
           )}
 
           {/* People List */}
-          <div className="max-h-48 overflow-y-auto space-y-1">
+          <div className="max-h-40 overflow-y-auto space-y-1">
             {filteredPeople.length === 0 && !canAddNew && (
-              <p className="text-sm text-gray-500 text-center py-2">No people found</p>
+              <p className="text-xs text-slate-500 text-center py-3">No people found</p>
             )}
 
             {filteredPeople.map((person) => (
               <div
                 key={person.id}
                 onClick={() => togglePerson(person.id)}
-                className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
+                className="flex items-center space-x-2 p-1.5 rounded hover:bg-slate-50 cursor-pointer"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
-                  {selectedPeople.includes(person.id) && <Check className="h-4 w-4 text-blue-600" />}
+                  {selectedPeople.includes(person.id) && (
+                    <div className="w-3 h-3 bg-slate-700 rounded-sm flex items-center justify-center">
+                      <Check className="h-2 w-2 text-white" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium">{person.name}</div>
-                  <div className="text-xs text-gray-500">{person.email}</div>
+                  <div className="text-xs font-medium text-slate-700">{person.name}</div>
+                  <div className="text-[10px] text-slate-500">{person.email}</div>
                 </div>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200 px-1 py-0">
                   {person.role}
                 </Badge>
               </div>
@@ -167,16 +181,18 @@ export function PeopleSelector({
             {pendingUpdates.map((name) => (
               <div
                 key={`pending-${name}`}
-                className="flex items-center space-x-2 p-2 rounded bg-blue-50 border-blue-200"
+                className="flex items-center space-x-2 p-1.5 rounded bg-slate-50 border border-slate-200"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
-                  <Check className="h-4 w-4 text-blue-600" />
+                  <div className="w-3 h-3 bg-slate-700 rounded-sm flex items-center justify-center">
+                    <Check className="h-2 w-2 text-white" />
+                  </div>
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium">{name}</div>
-                  <div className="text-xs text-blue-600">Will be added to database</div>
+                  <div className="text-xs font-medium text-slate-700">{name}</div>
+                  <div className="text-[10px] text-slate-600">Will be added to database</div>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-[10px] bg-slate-100 text-slate-600 px-1 py-0">
                   Pending
                 </Badge>
               </div>
@@ -184,11 +200,17 @@ export function PeopleSelector({
           </div>
 
           {/* Close Button */}
-          <Button onClick={handleClose} variant="outline" size="sm" className="w-full" disabled={isSaving}>
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size="sm"
+            className="w-full h-7 text-xs bg-slate-50 border-slate-200"
+            disabled={isSaving}
+          >
             {isSaving ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving to Database...
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Saving...
               </>
             ) : (
               "Done"
@@ -199,14 +221,14 @@ export function PeopleSelector({
 
       {/* Selected People Badges */}
       {selectedPeople.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {selectedPeople.map((personId) => {
             const person = allPeople.find((p) => p.id === personId)
             return (
-              <Badge key={personId} variant="secondary" className="pr-1">
+              <Badge key={personId} variant="secondary" className="pr-0.5 text-xs bg-slate-100 text-slate-700 border-0">
                 {person?.name || "Unknown"}
-                <button onClick={() => removePerson(personId)} className="ml-1 hover:bg-gray-300 rounded-full p-0.5">
-                  <X className="h-3 w-3" />
+                <button onClick={() => removePerson(personId)} className="ml-1 hover:bg-slate-200 rounded-full p-0.5">
+                  <X className="h-2 w-2" />
                 </button>
               </Badge>
             )
