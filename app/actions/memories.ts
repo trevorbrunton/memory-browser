@@ -106,14 +106,14 @@ export async function addMemory(
     const newMemoryFromDb: PrismaMemoryWithFullIncludes =
       await prisma.memory.create({
         data: {
-          title: restOfMemoryData.title,
-          description: restOfMemoryData.description,
+          ...restOfMemoryData, // Includes all fields from the DTO
           media_type: restOfMemoryData.mediaType,
           media_url: restOfMemoryData.mediaUrl,
+          thumbnail_url: restOfMemoryData.thumbnailUrl, // Added this field
           media_name: restOfMemoryData.mediaName,
           date: restOfMemoryData.date,
           people:
-            peopleIds.length > 0
+            peopleIds && peopleIds.length > 0
               ? {
                   create: peopleIds.map((personId) => ({
                     person_id: personId,
