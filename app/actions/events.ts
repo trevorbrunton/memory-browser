@@ -68,27 +68,31 @@ export async function addEvents(
   >[]
 ): Promise<CustomEventType[]> {
   const user = await getPrismaUser();
-  try {
-    const createdEvents: CustomEventType[] = [];
-    for (const data of eventDataArray) {
-      const newEvent = await prisma.event.create({
-        data: {
-          title: data.title.trim(),
-          description: data.description,
-          date: data.date,
-          type: data.dateType || "exact",
-          ownerId: user.id,
-          ...(data.placeId ? { place: { connect: { id: data.placeId } } } : {}),
-        },
-        include: { attributes: true },
-      });
-      createdEvents.push(transformEvent(newEvent));
+  const createdEvents: CustomEventType[] = [];
+  for (const data of eventDataArray) {
+    const eventData: any = {
+      title: data.title.trim(),
+      description: data.description,
+      date: data.date,
+      dateType: data.dateType || "exact",
+      ownerId: user.id,
+      attributes: {
+        create: data.attributes?.map((attr) => ({
+          attribute: attr.attribute,
+          value: attr.value,
+        })),
+      },
+    };
+    if (data.placeId) {
+      eventData.place = { connect: { id: data.placeId } };
     }
-    return createdEvents;
-  } catch (error) {
-    console.error("Error adding events:", error);
-    throw new Error("Failed to add events.");
+    const newEvent = await prisma.event.create({
+      data: eventData,
+      include: { attributes: true },
+    });
+    createdEvents.push(transformEvent(newEvent));
   }
+  return createdEvents;
 }
 
 export async function updateEvent(
@@ -100,22 +104,37 @@ export async function updateEvent(
   const user = await getPrismaUser();
   const eventToUpdate = await prisma.event.findFirst({
     where: { id: eventId, ownerId: user.id },
+    include: { attributes: true },
   });
   if (!eventToUpdate)
     throw new Error("Event not found or user does not have permission.");
 
-  // The rest of the update logic...
   const { attributes, placeId, dateType, ...eventCoreUpdates } = updates;
   const prismaEventUpdateData: any = {
     ...eventCoreUpdates,
     updated_at: new Date(),
   };
+
   if (dateType) prismaEventUpdateData.type = dateType;
+
   if (updates.hasOwnProperty("placeId")) {
     prismaEventUpdateData.place = placeId
       ? { connect: { id: placeId } }
       : { disconnect: true };
   }
+
+  if (attributes) {
+    await prisma.eventAttribute.deleteMany({
+      where: { event_id: eventId },
+    });
+    prismaEventUpdateData.attributes = {
+      create: attributes.map((attr) => ({
+        attribute: attr.attribute,
+        value: attr.value,
+      })),
+    };
+  }
+
   const updatedEvent = await prisma.event.update({
     where: { id: eventId },
     data: prismaEventUpdateData,

@@ -41,7 +41,7 @@ model Collection {
 }
 
 model Memory {
-  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
   title         String
   description   String?
   media_type    String
@@ -49,11 +49,11 @@ model Memory {
   thumbnail_url String?
   media_name    String
   date          DateTime
-  date_type     String          @default("exact")
-  created_at    DateTime        @default(now())
-  updated_at    DateTime        @updatedAt
-  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId       String          @db.ObjectId
+  date_type     String         @default("exact")
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId       String         @db.ObjectId
   people        MemoryPerson[]
   places        MemoryPlace[]
   events        MemoryEvent[]
@@ -66,6 +66,7 @@ model Person {
   email          String?
   role           String?
   photo_url      String?
+  phone_number   String?
   date_of_birth  String?
   place_of_birth String?
   marital_status String?
@@ -149,21 +150,21 @@ model MemoryPerson {
 }
 
 model MemoryPlace {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  memory   Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  memory    Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
   memory_id String @db.ObjectId
-  place    Place  @relation(fields: [place_id], references: [id], onDelete: Cascade)
-  place_id String @db.ObjectId
+  place     Place  @relation(fields: [place_id], references: [id], onDelete: Cascade)
+  place_id  String @db.ObjectId
 
   @@unique([memory_id, place_id])
 }
 
 model MemoryEvent {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  memory   Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  memory    Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
   memory_id String @db.ObjectId
-  event    Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  event_id String @db.ObjectId
+  event     Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id  String @db.ObjectId
 
   @@unique([memory_id, event_id])
 }

@@ -27,7 +27,7 @@ export function useAddPeople() {
   return useMutation({
     mutationFn: (
       peopleData: Omit<Person, "id" | "createdAt" | "updatedAt" | "ownerId">[]
-    ) => peopleActions.addPeople(peopleData.map((p) => p.name)),
+    ) => peopleActions.addPeople(peopleData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["people", userId] });
     },

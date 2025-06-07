@@ -26,13 +26,7 @@ export function useAddPlaces() {
   const { userId } = useAuth();
   return useMutation({
     mutationFn: (
-      placeData: {
-        name: string;
-        address?: string;
-        city: string;
-        country: string;
-        type: Place["type"];
-      }[]
+      placeData: Omit<Place, "id" | "ownerId" | "createdAt" | "updatedAt">[]
     ) => placesActions.addPlaces(placeData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["places", userId] });

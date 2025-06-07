@@ -19,13 +19,15 @@ export async function POST(request: Request) {
 
     const newCollection = await prisma.collection.create({
       data: {
-        userId: body.userId,
         userEmail: body.userEmail,
         collectionName: body.collectionName,
         collectionDetails: body.collectionDetails,
         users: [],
         createDate: new Date().toISOString(),
         updateDate: new Date().toISOString(),
+        owner: {
+          connect: { id: body.userId }
+        }
       },
     });
 

@@ -4,13 +4,23 @@ import prisma from "@/lib/prisma";
 import type {
   Memory as PrismaMemory,
   Reflection as PrismaReflection,
+  MemoryPerson,
+  MemoryPlace,
+  MemoryEvent,
 } from "@prisma/client";
 import type { Memory as CustomMemoryType, MediaType } from "@/types/memories";
 import type { Reflection as CustomReflectionType } from "@/types/reflection";
 import { getPrismaUser } from "./auth-helper";
 
 // Transformer functions remain the same...
-function transformMemory(memory: any): CustomMemoryType {
+function transformMemory(
+  memory: PrismaMemory & {
+    people: MemoryPerson[];
+    places: MemoryPlace[];
+    events: MemoryEvent[];
+    reflections: PrismaReflection[];
+  }
+): CustomMemoryType {
   return {
     id: memory.id,
     title: memory.title,
@@ -21,11 +31,11 @@ function transformMemory(memory: any): CustomMemoryType {
     mediaName: memory.media_name,
     date: new Date(memory.date),
     dateType: memory.date_type || "exact",
-    peopleIds: memory.people?.map((mp: any) => mp.person_id) || [],
+    peopleIds: memory.people?.map((mp) => mp.person_id) || [],
     placeId: memory.places?.[0]?.place_id || undefined,
     eventId: memory.events?.[0]?.event_id || undefined,
     reflections: memory.reflections?.map(transformReflection) || [],
-    reflectionIds: memory.reflections?.map((r: any) => r.id) || [],
+    reflectionIds: memory.reflections?.map((r) => r.id) || [],
     ownerId: memory.ownerId,
     createdAt: new Date(memory.created_at),
     updatedAt: new Date(memory.updated_at),
@@ -39,7 +49,7 @@ function transformReflection(
     id: reflection.id,
     title: reflection.title,
     content: reflection.content,
-    ownerId: reflection.ownerId,
+    ownerId: (reflection as any).ownerId, // Assuming ownerId is on the reflection
     createdAt: new Date(reflection.created_at),
     updatedAt: new Date(reflection.updated_at),
   };
@@ -50,9 +60,9 @@ export async function getAllMemories(): Promise<CustomMemoryType[]> {
   const memoriesFromDb = await prisma.memory.findMany({
     where: { ownerId: user.id },
     include: {
-      people: { include: { person: true } },
-      places: { include: { place: true } },
-      events: { include: { event: true } },
+      people: true,
+      places: true,
+      events: true,
       reflections: true,
     },
     orderBy: { date: "desc" },
@@ -60,7 +70,21 @@ export async function getAllMemories(): Promise<CustomMemoryType[]> {
   return memoriesFromDb.map(transformMemory);
 }
 
-// ... other actions updated similarly to check for ownership ...
+export async function getMemoryDetails(
+  id: string
+): Promise<CustomMemoryType | null> {
+  const user = await getPrismaUser();
+  const memory = await prisma.memory.findFirst({
+    where: { id, ownerId: user.id },
+    include: {
+      people: true,
+      places: true,
+      events: true,
+      reflections: true,
+    },
+  });
+  return memory ? transformMemory(memory) : null;
+}
 
 export async function addMemory(
   memoryData: Omit<
@@ -83,6 +107,7 @@ export async function addMemory(
       date_type: "exact",
       media_type: restOfMemoryData.mediaType,
       media_url: restOfMemoryData.mediaUrl,
+      thumbnail_url: restOfMemoryData.thumbnailUrl,
       media_name: restOfMemoryData.mediaName,
       people: {
         create: peopleIds.map((personId) => ({ person_id: personId })),
@@ -91,11 +116,213 @@ export async function addMemory(
       events: eventId ? { create: { event_id: eventId } } : undefined,
     },
     include: {
-      people: { include: { person: true } },
-      places: { include: { place: true } },
-      events: { include: { event: true } },
+      people: true,
+      places: true,
+      events: true,
       reflections: true,
     },
   });
   return transformMemory(newMemoryFromDb);
+}
+
+export async function updateMemoryDetails(
+  id: string,
+  updates: Pick<CustomMemoryType, "title" | "description" | "date">
+): Promise<CustomMemoryType | null> {
+  const user = await getPrismaUser();
+  const memoryToUpdate = await prisma.memory.findFirst({
+    where: { id: id, ownerId: user.id },
+  });
+  if (!memoryToUpdate) {
+    throw new Error("Memory not found or user does not have permission.");
+  }
+
+  const updatedMemory = await prisma.memory.update({
+    where: { id: id },
+    data: {
+      ...updates,
+      updated_at: new Date(),
+    },
+    include: {
+      people: true,
+      places: true,
+      events: true,
+      reflections: true,
+    },
+  });
+  return transformMemory(updatedMemory);
+}
+
+export async function updateMemoryPeople(
+  memoryId: string,
+  peopleIds: string[]
+): Promise<CustomMemoryType | null> {
+  const user = await getPrismaUser();
+  const memoryToUpdate = await prisma.memory.findFirst({
+    where: { id: memoryId, ownerId: user.id },
+  });
+
+  if (!memoryToUpdate) {
+    throw new Error("Memory not found or user does not have permission.");
+  }
+
+  await prisma.memoryPerson.deleteMany({
+    where: { memory_id: memoryId },
+  });
+
+  const updatedMemory = await prisma.memory.update({
+    where: { id: memoryId },
+    data: {
+      people: {
+        create: peopleIds.map((personId) => ({
+          person_id: personId,
+        })),
+      },
+      updated_at: new Date(),
+    },
+    include: {
+      people: true,
+      places: true,
+      events: true,
+      reflections: true,
+    },
+  });
+
+  return transformMemory(updatedMemory);
+}
+
+export async function updateMemoryEventAssociation(
+  memoryId: string,
+  eventId: string | null
+): Promise<CustomMemoryType | null> {
+  const user = await getPrismaUser();
+  const memoryToUpdate = await prisma.memory.findFirst({
+    where: { id: memoryId, ownerId: user.id },
+  });
+
+  if (!memoryToUpdate) {
+    throw new Error("Memory not found or user does not have permission.");
+  }
+
+  await prisma.memoryEvent.deleteMany({
+    where: { memory_id: memoryId },
+  });
+
+  const updatedMemory = await prisma.memory.update({
+    where: { id: memoryId },
+    data: {
+      events: eventId ? { create: { event_id: eventId } } : undefined,
+      updated_at: new Date(),
+    },
+    include: {
+      people: true,
+      places: true,
+      events: true,
+      reflections: true,
+    },
+  });
+
+  return transformMemory(updatedMemory);
+}
+
+export async function updateMemoryPlace(
+  memoryId: string,
+  placeId: string | null
+): Promise<CustomMemoryType | null> {
+  const user = await getPrismaUser();
+  const memoryToUpdate = await prisma.memory.findFirst({
+    where: { id: memoryId, ownerId: user.id },
+  });
+
+  if (!memoryToUpdate) {
+    throw new Error("Memory not found or user does not have permission.");
+  }
+
+  await prisma.memoryPlace.deleteMany({
+    where: { memory_id: memoryId },
+  });
+
+  const updatedMemory = await prisma.memory.update({
+    where: { id: memoryId },
+    data: {
+      places: placeId ? { create: { place_id: placeId } } : undefined,
+      updated_at: new Date(),
+    },
+    include: {
+      people: true,
+      places: true,
+      events: true,
+      reflections: true,
+    },
+  });
+
+  return transformMemory(updatedMemory);
+}
+
+export async function addReflection(
+  memoryId: string,
+  title: string,
+  content: string
+): Promise<CustomReflectionType> {
+  const user = await getPrismaUser();
+  const memory = await prisma.memory.findFirst({
+    where: { id: memoryId, ownerId: user.id },
+  });
+
+  if (!memory) {
+    throw new Error("Memory not found or user does not have permission.");
+  }
+
+  const newReflection = await prisma.reflection.create({
+    data: {
+      memory_id: memoryId,
+      title,
+      content,
+      ownerId: user.id,
+    },
+  });
+  return transformReflection(newReflection);
+}
+
+export async function updateReflection(
+  reflectionId: string,
+  title: string,
+  content: string
+): Promise<CustomReflectionType | null> {
+  const user = await getPrismaUser();
+  const reflectionToUpdate = await prisma.reflection.findFirst({
+    where: { id: reflectionId, ownerId: user.id },
+  });
+
+  if (!reflectionToUpdate) {
+    throw new Error("Reflection not found or user does not have permission.");
+  }
+
+  const updatedReflection = await prisma.reflection.update({
+    where: { id: reflectionId },
+    data: {
+      title,
+      content,
+      updated_at: new Date(),
+    },
+  });
+
+  return transformReflection(updatedReflection);
+}
+
+export async function deleteReflection(reflectionId: string): Promise<boolean> {
+  const user = await getPrismaUser();
+  const reflectionToDelete = await prisma.reflection.findFirst({
+    where: { id: reflectionId, ownerId: user.id },
+  });
+
+  if (!reflectionToDelete) {
+    throw new Error("Reflection not found or user does not have permission.");
+  }
+
+  await prisma.reflection.delete({
+    where: { id: reflectionId },
+  });
+
+  return true;
 }

@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Event as CustomEventType } from "@/types/events";
+import type { Event as CustomEventType, EventAttribute } from "@/types/events";
 import * as eventsActions from "@/app/actions/events";
 import { useAuth } from "@clerk/nextjs";
 
@@ -11,7 +11,8 @@ interface AddEventsDTO {
   description?: string;
   date: Date;
   placeId?: string;
-  dateType?: CustomEventType["dateType"];
+  dateType: CustomEventType["dateType"];
+  attributes?: EventAttribute[];
 }
 
 interface UpdateEventDTO {
@@ -44,7 +45,12 @@ export function useAddEvents() {
   const { userId } = useAuth();
   return useMutation<CustomEventType[], Error, AddEventsDTO[]>({
     mutationFn: (eventDataArray: AddEventsDTO[]) =>
-      eventsActions.addEvents(eventDataArray),
+      eventsActions.addEvents(
+        eventDataArray.map((event) => ({
+          ...event,
+          dateType: event.dateType ?? "exact",
+        }))
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events", userId] });
     },

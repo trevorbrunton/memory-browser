@@ -27,7 +27,6 @@ export async function GET() {
           email: auth.emailAddresses[0].emailAddress,
           defaultCollectionId: "",
           quotaLimit: 100,
-          collections: [],
         },
       });
 
@@ -35,12 +34,13 @@ export async function GET() {
         data: {
           collectionName: "Recent Uploads",
           collectionDetails: "A collection of your most recent uploads",
-          userId: newUser.id,
+          users: [newUser.id],
           userEmail: newUser.email,
-          users: [],
-          memories: [],
           createDate: new Date().toISOString(),
           updateDate: new Date().toISOString(),
+          owner: {
+            connect: { id: newUser.id },
+          },
         },
       });
 

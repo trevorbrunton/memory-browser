@@ -1,4 +1,4 @@
-export type Memory = {
+export type JournalEntry = {
   id: string;
   title: string;
   description?: string;
@@ -11,4 +11,4 @@ export type Memory = {
   reflectionIds: string[];
   createdAt: Date;
   updatedAt: Date;
-}
+};

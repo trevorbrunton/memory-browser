@@ -118,6 +118,9 @@ export function useAddMemoryWithFile() {
       });
       if (mainSignedURLResult.failure)
         throw new Error(`S3 Main File Error: ${mainSignedURLResult.failure}`);
+      if (!mainSignedURLResult.success) {
+        throw new Error("Failed to get signed URL for main file.");
+      }
       const { url: mainUploadUrl, uploadedFileName: mainUploadedFileName } =
         mainSignedURLResult.success;
 
@@ -164,12 +167,13 @@ export function useAddMemoryWithFile() {
       }
 
       // 4. Save memory metadata
-      const fullMemoryData: AddMemoryDTO = {
+      const fullMemoryData: AddMemoryDTO & { dateType: string } = {
         ...memoryData,
         mediaType: file.type.startsWith("image/") ? "photo" : "document",
         mediaUrl,
         thumbnailUrl,
         mediaName: file.name,
+        dateType: "exact",
       };
       return memoriesActions.addMemory(fullMemoryData);
     },

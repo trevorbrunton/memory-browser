@@ -63,13 +63,12 @@ export default function CreateEventPage() {
       const eventData = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
-        date: new Date(formData.date), // formData.date is required at this point
+        date: new Date(formData.date),
+        dateType: "exact" as "exact",
         placeId: formData.placeId || undefined,
-        type: formData.type,
-        status: formData.status,
-        maxAttendees: formData.maxAttendees ? Number.parseInt(formData.maxAttendees) : undefined,
+        // or another appropriate default/type, adjust as needed
         attributes: formData.attributes,
-      }
+      };
 
       const newEvents = await addEventsMutation.mutateAsync([eventData])
 

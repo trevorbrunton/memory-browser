@@ -1,24 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { Save, ArrowLeft, User, Mail, Phone, Briefcase, Plus, X, Settings } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
-import { useAddPeople } from "@/hooks/use-people"
-import { AttributeSelector } from "@/components/attribute-selector"
-import type { Person, PersonAttribute } from "@/types/people"
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Save,
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  Plus,
+  X,
+  Settings,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useAddPeople } from "@/hooks/use-people";
+import { AttributeSelector } from "@/components/attribute-selector";
+import type { PersonAttribute } from "@/types/people";
+import { Badge } from "@/components/ui/badge";
 
 export default function CreatePersonPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const addPeopleMutation = useAddPeople()
+  const router = useRouter();
+  const { toast } = useToast();
+  const addPeopleMutation = useAddPeople();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -29,11 +38,14 @@ export default function CreatePersonPage() {
     company: "",
     notes: "",
     attributes: [] as PersonAttribute[],
-  })
+  });
 
-  const handleInputChange = (field: string, value: string | PersonAttribute[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  const handleInputChange = (
+    field: string,
+    value: string | PersonAttribute[]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
@@ -41,63 +53,62 @@ export default function CreatePersonPage() {
         title: "Error",
         description: "Person name is required",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
       const personData = {
         name: formData.name.trim(),
         email: formData.email.trim() || undefined,
-        phone: formData.phone.trim() || undefined,
         role: formData.role.trim() || undefined,
-        company: formData.company.trim() || undefined,
-        notes: formData.notes.trim() || undefined,
         attributes: formData.attributes,
-      }
+      };
 
-      const newPeople = await addPeopleMutation.mutateAsync([personData])
+      const newPeople = await addPeopleMutation.mutateAsync([personData]);
 
       toast({
         title: "Success",
         description: "Person created successfully",
-      })
+      });
 
       // Navigate to the new person's details page
       if (newPeople.length > 0) {
-        router.push(`/person-details/${newPeople[0].id}`)
+        router.push(`/person-details/${newPeople[0].id}`);
       } else {
-        router.push("/")
+        router.push("/");
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to create person",
         variant: "destructive",
-      })
+      });
     }
-  }
-
-
+  };
 
   // Attribute management functions
   const addAttribute = () => {
-    const newAttribute: PersonAttribute = { attribute: "", value: "" }
-    handleInputChange("attributes", [...formData.attributes, newAttribute])
-  }
+    const newAttribute: PersonAttribute = { attribute: "", value: "" };
+    handleInputChange("attributes", [...formData.attributes, newAttribute]);
+  };
 
-  const updateAttribute = (index: number, field: "attribute" | "value", value: string) => {
-    const updatedAttributes = [...formData.attributes]
-    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value }
-    handleInputChange("attributes", updatedAttributes)
-  }
+  const updateAttribute = (
+    index: number,
+    field: "attribute" | "value",
+    value: string
+  ) => {
+    const updatedAttributes = [...formData.attributes];
+    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value };
+    handleInputChange("attributes", updatedAttributes);
+  };
 
   const removeAttribute = (index: number) => {
-    const updatedAttributes = formData.attributes.filter((_, i) => i !== index)
-    handleInputChange("attributes", updatedAttributes)
-  }
+    const updatedAttributes = formData.attributes.filter((_, i) => i !== index);
+    handleInputChange("attributes", updatedAttributes);
+  };
 
-  const canSave = formData.name.trim() && !addPeopleMutation.isPending
+  const canSave = formData.name.trim() && !addPeopleMutation.isPending;
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -112,7 +123,11 @@ export default function CreatePersonPage() {
             Create New Person
           </h1>
         </div>
-        <Button onClick={handleSave} disabled={!canSave} className="min-w-[120px]">
+        <Button
+          onClick={handleSave}
+          disabled={!canSave}
+          className="min-w-[120px]"
+        >
           {addPeopleMutation.isPending ? (
             <>
               <Save className="h-4 w-4 mr-2 animate-spin" />
@@ -140,7 +155,9 @@ export default function CreatePersonPage() {
                 <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-2xl font-bold mb-3">
                   {formData.name ? formData.name.charAt(0).toUpperCase() : "?"}
                 </div>
-                <h4 className="font-medium text-lg">{formData.name || "New Person"}</h4>
+                <h4 className="font-medium text-lg">
+                  {formData.name || "New Person"}
+                </h4>
               </div>
 
               <div className="space-y-2 text-sm">
@@ -168,8 +185,6 @@ export default function CreatePersonPage() {
                 )}
               </div>
 
-
-
               {formData.attributes.length > 0 && (
                 <div className="mt-4 p-3 bg-gray-50 rounded">
                   <h5 className="font-medium text-sm mb-2">Attributes:</h5>
@@ -177,7 +192,11 @@ export default function CreatePersonPage() {
                     {formData.attributes
                       .filter((attr) => attr.attribute && attr.value)
                       .map((attr, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {attr.attribute}: {attr.value}
                         </Badge>
                       ))}
@@ -206,7 +225,6 @@ export default function CreatePersonPage() {
                   placeholder="Enter full name"
                 />
               </div>
-             
             </div>
           </Card>
 
@@ -294,16 +312,22 @@ export default function CreatePersonPage() {
             <div className="space-y-4">
               {formData.attributes.length === 0 ? (
                 <p className="text-sm text-gray-500 italic text-center py-4">
-                  No additional attributes. Click "Add Attribute" to add interests, social media, or other details.
+                  No additional attributes. Click "Add Attribute" to add
+                  interests, social media, or other details.
                 </p>
               ) : (
                 formData.attributes.map((attr, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg">
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg"
+                  >
                     <div className="space-y-2">
                       <Label>Attribute</Label>
                       <AttributeSelector
                         value={attr.attribute}
-                        onChange={(value) => updateAttribute(index, "attribute", value)}
+                        onChange={(value) =>
+                          updateAttribute(index, "attribute", value)
+                        }
                         placeholder="Select or add attribute..."
                         entityType="person"
                       />
@@ -322,7 +346,9 @@ export default function CreatePersonPage() {
                       </div>
                       <Input
                         value={attr.value}
-                        onChange={(e) => updateAttribute(index, "value", e.target.value)}
+                        onChange={(e) =>
+                          updateAttribute(index, "value", e.target.value)
+                        }
                         placeholder="Enter value..."
                       />
                     </div>
@@ -333,12 +359,18 @@ export default function CreatePersonPage() {
 
             {formData.attributes.length > 0 && (
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">Current Attributes:</h4>
+                <h4 className="font-medium text-sm mb-2">
+                  Current Attributes:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {formData.attributes
                     .filter((attr) => attr.attribute && attr.value)
                     .map((attr, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs"
+                      >
                         {attr.attribute}: {attr.value}
                       </Badge>
                     ))}
@@ -349,16 +381,24 @@ export default function CreatePersonPage() {
 
           {/* Help Text */}
           <Card className="p-4 bg-purple-50 border-purple-200">
-            <h4 className="font-medium text-sm mb-2 text-purple-800">💡 Tips for Creating People</h4>
+            <h4 className="font-medium text-sm mb-2 text-purple-800">
+              💡 Tips for Creating People
+            </h4>
             <ul className="text-sm text-purple-700 space-y-1">
               <li>• Use full names to avoid confusion with similar names</li>
               <li>• Add contact information to easily reach out later</li>
-              <li>• Use attributes to store birthdays, social media handles, or interests</li>
-              <li>• Notes are great for remembering how you met or important details</li>
+              <li>
+                • Use attributes to store birthdays, social media handles, or
+                interests
+              </li>
+              <li>
+                • Notes are great for remembering how you met or important
+                details
+              </li>
             </ul>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }
