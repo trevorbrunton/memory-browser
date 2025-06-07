@@ -1,20 +1,26 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ImageIcon, MapPin, User, Calendar, Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageIcon, MapPin, User, Calendar, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface TabNavigationProps {
-  activeTab: string
-  memoriesCount: number
-  placesCount: number
-  peopleCount: number
-  eventsCount: number
+  activeTab: string;
+  memoriesCount: number;
+  placesCount: number;
+  peopleCount: number;
+  eventsCount: number;
 }
 
-export function TabNavigation({ activeTab, memoriesCount, placesCount, peopleCount, eventsCount }: TabNavigationProps) {
-  const router = useRouter()
+export function TabNavigation({
+  activeTab,
+  memoriesCount,
+  placesCount,
+  peopleCount,
+  eventsCount,
+}: TabNavigationProps) {
+  const router = useRouter();
 
   return (
     <div className="flex items-center justify-between">
@@ -61,8 +67,14 @@ export function TabNavigation({ activeTab, memoriesCount, placesCount, peopleCou
             variant="default"
             size="sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Upload Memory
+            <div className="hidden sm:flex">
+              <Plus className="h-4 w-4 mr-2" />
+              Upload Memory
+            </div>
+            <div className="flex sm:hidden">
+              <Plus className="h-4 w-4" />
+
+            </div>
           </Button>
         )}
         {activeTab === "places" && (
