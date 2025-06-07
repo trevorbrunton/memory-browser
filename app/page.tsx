@@ -82,15 +82,19 @@ export default function Page() {
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       <PageHeader onRefresh={refetchAll} isRefreshing={isAnyFetching} />
 
-      <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} activeTab={activeTab} />
+      <SearchBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        activeTab={activeTab}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabNavigation
           activeTab={activeTab}
           memoriesCount={allMemories.length}
-          placesCount={allPlaces.length}
           peopleCount={allPeople.length}
           eventsCount={allEvents.length}
+          placesCount={allPlaces.length}
         />
 
         {/* Memories Tab */}
@@ -100,9 +104,15 @@ export default function Page() {
           ) : filteredMemories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredMemories.map((memory) => {
-                const memoryPeople = allPeople.filter((person) => memory.peopleIds.includes(person.id))
-                const memoryPlace = allPlaces.find((place) => place.id === memory.placeId)
-                const memoryEvent = allEvents.find((event) => event.id === memory.eventId)
+                const memoryPeople = allPeople.filter((person) =>
+                  memory.peopleIds.includes(person.id)
+                );
+                const memoryPlace = allPlaces.find(
+                  (place) => place.id === memory.placeId
+                );
+                const memoryEvent = allEvents.find(
+                  (event) => event.id === memory.eventId
+                );
 
                 return (
                   <MemoryCard
@@ -112,51 +122,25 @@ export default function Page() {
                     place={memoryPlace}
                     event={memoryEvent}
                   />
-                )
+                );
               })}
             </div>
           ) : (
             <EmptyState
               icon={ImageIcon}
               title="No memories found"
-              description={searchTerm ? "Try a different search term" : "Start by uploading your first memory"}
+              description={
+                searchTerm
+                  ? "Try a different search term"
+                  : "Start by uploading your first memory"
+              }
               actionLabel={!searchTerm ? "Upload Memory" : undefined}
-              onAction={!searchTerm ? () => router.push("/create-memory") : undefined}
+              onAction={
+                !searchTerm ? () => router.push("/create-memory") : undefined
+              }
             />
           )}
         </TabsContent>
-
-        {/* Places Tab */}
-        <TabsContent value="places" className="space-y-4">
-          {isAnyLoading ? (
-            <LoadingState message="Loading places..." />
-          ) : filteredPlaces.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPlaces.map((place) => {
-                const placeMemories = allMemories.filter((memory) => memory.placeId === place.id)
-                const placeEvents = allEvents.filter((event) => event.placeId === place.id)
-
-                return (
-                  <PlaceCard
-                    key={place.id}
-                    place={place}
-                    memoriesCount={placeMemories.length}
-                    eventsCount={placeEvents.length}
-                  />
-                )
-              })}
-            </div>
-          ) : (
-            <EmptyState
-              icon={MapPin}
-              title="No places found"
-              description={searchTerm ? "Try a different search term" : "Start by creating your first place"}
-              actionLabel={!searchTerm ? "Create Place" : undefined}
-              onAction={!searchTerm ? () => router.push("/create-place") : undefined}
-            />
-          )}
-        </TabsContent>
-
         {/* People Tab */}
         <TabsContent value="people" className="space-y-4">
           {isAnyLoading ? (
@@ -164,9 +148,17 @@ export default function Page() {
           ) : filteredPeople.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredPeople.map((person) => {
-                const personMemories = allMemories.filter((memory) => memory.peopleIds.includes(person.id))
+                const personMemories = allMemories.filter((memory) =>
+                  memory.peopleIds.includes(person.id)
+                );
 
-                return <PersonCard key={person.id} person={person} memoriesCount={personMemories.length} />
+                return (
+                  <PersonCard
+                    key={person.id}
+                    person={person}
+                    memoriesCount={personMemories.length}
+                  />
+                );
               })}
             </div>
           ) : (
@@ -174,7 +166,9 @@ export default function Page() {
               icon={User}
               title="No people found"
               description={
-                searchTerm ? "Try a different search term" : "People will appear here as you add them to memories"
+                searchTerm
+                  ? "Try a different search term"
+                  : "People will appear here as you add them to memories"
               }
             />
           )}
@@ -187,12 +181,21 @@ export default function Page() {
           ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredEvents.map((event) => {
-                const eventMemories = allMemories.filter((memory) => memory.eventId === event.id)
-                const eventPlace = allPlaces.find((place) => place.id === event.placeId)
+                const eventMemories = allMemories.filter(
+                  (memory) => memory.eventId === event.id
+                );
+                const eventPlace = allPlaces.find(
+                  (place) => place.id === event.placeId
+                );
 
                 return (
-                  <EventCard key={event.id} event={event} place={eventPlace} memoriesCount={eventMemories.length} />
-                )
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    place={eventPlace}
+                    memoriesCount={eventMemories.length}
+                  />
+                );
               })}
             </div>
           ) : (
@@ -200,12 +203,55 @@ export default function Page() {
               icon={Calendar}
               title="No events found"
               description={
-                searchTerm ? "Try a different search term" : "Events will appear here as you add them to memories"
+                searchTerm
+                  ? "Try a different search term"
+                  : "Events will appear here as you add them to memories"
+              }
+            />
+          )}
+        </TabsContent>
+
+        {/* Places Tab */}
+        <TabsContent value="places" className="space-y-4">
+          {isAnyLoading ? (
+            <LoadingState message="Loading places..." />
+          ) : filteredPlaces.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPlaces.map((place) => {
+                const placeMemories = allMemories.filter(
+                  (memory) => memory.placeId === place.id
+                );
+                const placeEvents = allEvents.filter(
+                  (event) => event.placeId === place.id
+                );
+
+                return (
+                  <PlaceCard
+                    key={place.id}
+                    place={place}
+                    memoriesCount={placeMemories.length}
+                    eventsCount={placeEvents.length}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={MapPin}
+              title="No places found"
+              description={
+                searchTerm
+                  ? "Try a different search term"
+                  : "Start by creating your first place"
+              }
+              actionLabel={!searchTerm ? "Create Place" : undefined}
+              onAction={
+                !searchTerm ? () => router.push("/create-place") : undefined
               }
             />
           )}
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

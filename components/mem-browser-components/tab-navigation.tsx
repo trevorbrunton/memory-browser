@@ -23,33 +23,59 @@ export function TabNavigation({ activeTab, memoriesCount, placesCount, peopleCou
           <ImageIcon className="h-4 w-4" />
           Memories ({memoriesCount})
         </TabsTrigger>
-        <TabsTrigger value="places" className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Places ({placesCount})
-        </TabsTrigger>
+
         <TabsTrigger value="people" className="flex items-center gap-2">
-          <User className="h-4 w-4" />
-          People ({peopleCount})
+          <div className="hidden sm:flex">
+            <User className="h-4 w-4 mr-1" />
+            People ({peopleCount})
+          </div>
+          <div className="flex sm:hidden">
+            <User className="h-4 w-4" />({peopleCount})
+          </div>
         </TabsTrigger>
+
         <TabsTrigger value="events" className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Events ({eventsCount})
+          <div className="hidden sm:flex">
+            <Calendar className="h-4 w-4 mr-1" />
+            Events ({eventsCount})
+          </div>
+          <div className="flex sm:hidden">
+            <Calendar className="h-4 w-4" />({eventsCount})
+          </div>
+        </TabsTrigger>
+
+        <TabsTrigger value="places" className="flex items-center gap-2">
+          <div className="hidden sm:flex">
+            <MapPin className="h-4 w-4 mr-1" />
+            Places ({placesCount})
+          </div>
+          <div className="flex sm:hidden">
+            <MapPin className="h-4 w-4" />({placesCount})
+          </div>
         </TabsTrigger>
       </TabsList>
       <div className="flex gap-2">
         {activeTab === "memories" && (
-          <Button onClick={() => router.push("/create-memory")} variant="default" size="sm">
+          <Button
+            onClick={() => router.push("/create-memory")}
+            variant="default"
+            size="sm"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Upload Memory
           </Button>
         )}
         {activeTab === "places" && (
-          <Button onClick={() => router.push("/create-place")} variant="default" size="sm">
+          <Button
+            onClick={() => router.push("/create-place")}
+            variant="default"
+            size="sm"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Create Place
           </Button>
         )}
       </div>
     </div>
-  )
+  );
 }
