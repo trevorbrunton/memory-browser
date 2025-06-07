@@ -227,4 +227,113 @@ export function useUpdateMemoryDetails() {
   });
 }
 
-// ... (rest of the hooks remain the same) ...
+export function useUpdateMemoryPeople() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Memory | null,
+    Error,
+    { memoryId: string; peopleIds: string[] }
+  >({
+    mutationFn: ({ memoryId, peopleIds }) =>
+      memoriesActions.updateMemoryPeople(memoryId, peopleIds),
+    onSuccess: (updatedMemory) => {
+      if (updatedMemory) {
+        queryClient.invalidateQueries({ queryKey: ["memories"] });
+        queryClient.invalidateQueries({
+          queryKey: ["memory", updatedMemory.id],
+        });
+      }
+    },
+  });
+}
+
+export function useUpdateMemoryEventAssociation() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Memory | null,
+    Error,
+    { memoryId: string; eventId: string | null }
+  >({
+    mutationFn: ({ memoryId, eventId }) =>
+      memoriesActions.updateMemoryEventAssociation(memoryId, eventId),
+    onSuccess: (updatedMemory) => {
+      if (updatedMemory) {
+        queryClient.invalidateQueries({ queryKey: ["memories"] });
+        queryClient.invalidateQueries({
+          queryKey: ["memory", updatedMemory.id],
+        });
+      }
+    },
+  });
+}
+
+export function useUpdateMemoryPlace() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Memory | null,
+    Error,
+    { memoryId: string; placeId: string | null }
+  >({
+    mutationFn: ({ memoryId, placeId }) =>
+      memoriesActions.updateMemoryPlace(memoryId, placeId),
+    onSuccess: (updatedMemory) => {
+      if (updatedMemory) {
+        queryClient.invalidateQueries({ queryKey: ["memories"] });
+        queryClient.invalidateQueries({
+          queryKey: ["memory", updatedMemory.id],
+        });
+      }
+    },
+  });
+}
+
+export function useAddReflection() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Reflection,
+    Error,
+    { memoryId: string; title: string; content: string },
+    ReflectionMutationContext
+  >({
+    mutationFn: ({ memoryId, title, content }) =>
+      memoriesActions.addReflection(memoryId, title, content),
+    onSuccess: (newReflection, { memoryId }) => {
+      queryClient.invalidateQueries({ queryKey: ["memory", memoryId] });
+      queryClient.invalidateQueries({ queryKey: ["memories"] });
+    },
+  });
+}
+
+export function useUpdateReflection() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Reflection | null,
+    Error,
+    { reflectionId: string; memoryId: string; title: string; content: string },
+    ReflectionMutationContext
+  >({
+    mutationFn: ({ reflectionId, title, content }) =>
+      memoriesActions.updateReflection(reflectionId, title, content),
+    onSuccess: (data, { memoryId }) => {
+      queryClient.invalidateQueries({ queryKey: ["memory", memoryId] });
+      queryClient.invalidateQueries({ queryKey: ["memories"] });
+    },
+  });
+}
+
+export function useDeleteReflection() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    boolean,
+    Error,
+    { reflectionId: string; memoryId: string },
+    ReflectionMutationContext
+  >({
+    mutationFn: ({ reflectionId }) =>
+      memoriesActions.deleteReflection(reflectionId),
+    onSuccess: (data, { memoryId }) => {
+      queryClient.invalidateQueries({ queryKey: ["memory", memoryId] });
+      queryClient.invalidateQueries({ queryKey: ["memories"] });
+    },
+  });
+}
