@@ -2,8 +2,6 @@ import type { Reflection } from "@/types/reflection";
 
 export type MediaType = "photo" | "document";
 
-
-
 export interface Memory {
   id: string;
   title: string;
@@ -17,8 +15,9 @@ export interface Memory {
   peopleIds: string[];
   placeId?: string;
   eventId?: string;
-  reflections: Reflection[]; // Add this line
+  reflections: Reflection[];
   reflectionIds: string[];
+  ownerId: string;
   createdAt: Date;
   updatedAt: Date;
 }

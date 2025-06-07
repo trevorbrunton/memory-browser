@@ -1,6 +1,6 @@
 export type Collection = {
   id: string;
-  owner: string;
+  ownerId: string;
   collectionName: string;
   collectionDetails: string;
   users: string[];

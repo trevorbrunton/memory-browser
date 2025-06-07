@@ -10,6 +10,7 @@ export type Person = {
   spouseId?: string;
   childrenIds?: string[];
   attributes?: PersonAttribute[];
+  ownerId: string;
   createdAt: Date;
   updatedAt: Date;
 };

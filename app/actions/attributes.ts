@@ -4,6 +4,7 @@
 import prisma from "@/lib/prisma";
 import type { Attribute as PrismaAttribute } from "@prisma/client";
 import type { Attribute as CustomAttributeType } from "@/types/attributes";
+import { getPrismaUser } from "./auth-helper";
 
 function transformAttribute(attr: PrismaAttribute): CustomAttributeType {
   return {
@@ -12,60 +13,44 @@ function transformAttribute(attr: PrismaAttribute): CustomAttributeType {
     category: attr.category || undefined,
     description: attr.description || undefined,
     entityType: attr.entity_type as CustomAttributeType["entityType"],
+    ownerId: attr.ownerId,
     createdAt: new Date(attr.created_at),
     updatedAt: new Date(attr.updated_at),
   };
 }
 
 export async function getAllAttributes(): Promise<CustomAttributeType[]> {
-  console.log("📖 Reading attributes with Prisma (MongoDB)...");
+  const user = await getPrismaUser();
   try {
     const attributes = await prisma.attribute.findMany({
+      where: { ownerId: user.id },
       orderBy: [{ entity_type: "asc" }, { category: "asc" }, { name: "asc" }],
     });
-    const transformedAttributes = attributes.map(transformAttribute);
-    console.log(
-      `✅ Retrieved ${transformedAttributes.length} attributes with Prisma (MongoDB)`
-    );
-    return transformedAttributes;
+    return attributes.map(transformAttribute);
   } catch (error) {
-    console.error("❌ Error fetching attributes with Prisma (MongoDB):", error);
-    throw new Error(
-      `Failed to fetch attributes: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    console.error("❌ Error fetching attributes:", error);
+    throw new Error("Failed to fetch attributes.");
   }
 }
 
 export async function getAttributesByEntityType(
   entityType: "person" | "event" | "place"
 ): Promise<CustomAttributeType[]> {
-  console.log(`📖 Reading ${entityType} attributes with Prisma (MongoDB)...`);
+  const user = await getPrismaUser();
   try {
     const attributes = await prisma.attribute.findMany({
       where: {
+        ownerId: user.id,
         entity_type: {
           in: [entityType, "all"],
         },
       },
       orderBy: [{ category: "asc" }, { name: "asc" }],
     });
-    const transformedAttributes = attributes.map(transformAttribute);
-    console.log(
-      `✅ Retrieved ${transformedAttributes.length} ${entityType} attributes with Prisma (MongoDB)`
-    );
-    return transformedAttributes;
+    return attributes.map(transformAttribute);
   } catch (error) {
-    console.error(
-      "❌ Error fetching attributes by entity type with Prisma (MongoDB):",
-      error
-    );
-    throw new Error(
-      `Failed to fetch ${entityType} attributes: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    console.error("❌ Error fetching attributes by entity type:", error);
+    throw new Error(`Failed to fetch ${entityType} attributes.`);
   }
 }
 
@@ -74,7 +59,7 @@ export async function addAttribute(
   category?: string,
   entityType: "person" | "event" | "place" | "all" = "all"
 ): Promise<CustomAttributeType> {
-  console.log("💾 Adding attribute with Prisma (MongoDB):", name);
+  const user = await getPrismaUser();
   try {
     const newAttribute = await prisma.attribute.create({
       data: {
@@ -82,20 +67,13 @@ export async function addAttribute(
         category: category || "Custom",
         description: `Custom attribute: ${name}`,
         entity_type: entityType,
+        ownerId: user.id,
       },
     });
-    const transformedAttribute = transformAttribute(newAttribute);
-    console.log(
-      `✅ Successfully added ${entityType} attribute with Prisma (MongoDB): ${transformedAttribute.name}`
-    );
-    return transformedAttribute;
+    return transformAttribute(newAttribute);
   } catch (error) {
-    console.error("❌ Error adding attribute with Prisma (MongoDB):", error);
-    throw new Error(
-      `Failed to add attribute: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    console.error("❌ Error adding attribute:", error);
+    throw new Error("Failed to add attribute.");
   }
 }
 
@@ -103,18 +81,11 @@ export async function searchAttributes(
   query: string,
   entityType?: "person" | "event" | "place"
 ): Promise<CustomAttributeType[]> {
-  console.log(
-    `🔍 Searching attributes for: "${query}" (entity: ${
-      entityType || "all"
-    }) with Prisma (MongoDB)`
-  );
+  const user = await getPrismaUser();
   try {
     const whereCondition: any = {
+      ownerId: user.id,
       name: {
-        // For MongoDB, Prisma uses $regex for contains, which can be less performant than text indexes for large datasets.
-        // For true text search, ensure a text index is created on 'name' in MongoDB.
-        // Then you might use: { $text: { $search: query } } via $runCommandRaw or await a Prisma feature.
-        // For simplicity with Prisma Client directly:
         contains: query,
         mode: "insensitive",
       },
@@ -130,20 +101,9 @@ export async function searchAttributes(
       where: whereCondition,
       orderBy: [{ category: "asc" }, { name: "asc" }],
     });
-    const transformedAttributes = attributes.map(transformAttribute);
-    console.log(
-      `✅ Found ${transformedAttributes.length} attributes matching "${query}" with Prisma (MongoDB)`
-    );
-    return transformedAttributes;
+    return attributes.map(transformAttribute);
   } catch (error) {
-    console.error(
-      "❌ Error searching attributes with Prisma (MongoDB):",
-      error
-    );
-    throw new Error(
-      `Failed to search attributes: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    console.error("❌ Error searching attributes:", error);
+    throw new Error("Failed to search attributes.");
   }
 }

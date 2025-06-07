@@ -6,6 +6,7 @@ export type Event = {
   dateType: "year" | "month" | "day" | "exact";
   placeId?: string | null;
   attributes?: EventAttribute[];
+  ownerId: string;
   createdAt: Date;
   updatedAt: Date;
 };

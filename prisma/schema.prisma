@@ -1,277 +1,199 @@
-// prisma/schema.prisma
-
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL") // This will be your MongoDB connection string
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-model Attribute {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  category    String?  @default("Custom")
-  description String?
-  entity_type String // "person", "event", "place", "reflection", "journal", "all"
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
 
-  // For MongoDB, if these were intended as relations to specific attribute instances,
-  // you might embed them or handle them differently.
-  // Keeping them as string arrays if they refer to names/categories:
-  // person_attributes_ref String[]
-  // event_attributes_ref  String[]
-  // place_attributes_ref  String[]
+model User {
+  id                  String       @id @default(auto()) @map("_id") @db.ObjectId
+  externalId          String       @unique
+  email               String       @unique
+  plan                String?      @default("FREE")
+  quotaLimit          Int?
+  defaultCollectionId String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  memories            Memory[]
+  places              Place[]
+  people              Person[]
+  events              Event[]
+  attributes          Attribute[]
+  reflections         Reflection[]
+  collections         Collection[]
+}
 
-  @@index([entity_type])
-  @@index([name])
-  @@index([category])
+model Collection {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  collectionName    String
+  collectionDetails String
+  userEmail         String
+  users             String[]
+  createDate        String
+  updateDate        String
+  owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId           String   @db.ObjectId
+}
+
+model Memory {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String?
+  media_type    String
+  media_url     String
+  thumbnail_url String?
+  media_name    String
+  date          DateTime
+  date_type     String          @default("exact")
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId       String          @db.ObjectId
+  people        MemoryPerson[]
+  places        MemoryPlace[]
+  events        MemoryEvent[]
+  reflections   Reflection[]
 }
 
 model Person {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  id             String            @id @default(auto()) @map("_id") @db.ObjectId
   name           String
   email          String?
   role           String?
   photo_url      String?
   date_of_birth  String?
   place_of_birth String?
-  marital_status String? // e.g., "single", "married"
-  spouse_id      String?  @db.ObjectId // If this refers to another Person's ID
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-  childrenIds    String[] @db.ObjectId // Array of Person IDs
-
-  attributes PersonAttribute[] // Embedded or related
-  memories   MemoryPerson[] // Relation for memories this person is in
-
-  // Self-relation for spouse.
-  // Prisma needs explicit relation fields for MongoDB for self-relations if not embedding.
-  // spouse         Person?   @relation("SpouseRelation", fields: [spouse_id_ref], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  // spouse_id_ref  String?   @db.ObjectId @unique // Field to hold the reference for Prisma
-  // spouses        Person[]  @relation("SpouseRelation")
-
-  @@index([name])
-  @@index([email])
-}
-
-// Option 1: PersonAttributes as embedded documents (typical MongoDB style)
-// This would be part of the Person model:
-// attributes PersonAttributeEmbed[]
-// type PersonAttributeEmbed {
-//   attribute String
-//   value     String
-// }
-
-// Option 2: PersonAttributes as a separate related collection (current approach)
-model PersonAttribute {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  person_id  String   @db.ObjectId
-  attribute  String
-  value      String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
-
-  @@unique([person_id, attribute])
-  @@index([person_id])
-}
-
-model Event {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String?
-  date        DateTime
-  place_id    String?  @db.ObjectId // Reference to Place ID
-  type        String // e.g., "meeting", "conference"
-  capacity    Int?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  place      Place?           @relation(fields: [place_id], references: [id], onDelete: SetNull)
-  attributes EventAttribute[] // Embedded or related
-  memories   MemoryEvent[] // Relation for memories associated with this event
-
-  @@index([title])
-  @@index([date])
-  @@index([place_id])
-}
-
-model EventAttribute {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  event_id   String   @db.ObjectId
-  attribute  String
-  value      String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
-
-  @@unique([event_id, attribute])
-  @@index([event_id])
+  marital_status String?
+  spouse_id      String?
+  childrenIds    String[]
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  owner          User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId        String            @db.ObjectId
+  attributes     PersonAttribute[]
+  memories       MemoryPerson[]
 }
 
 model Place {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String           @id @default(auto()) @map("_id") @db.ObjectId
   name       String
   address    String?
   city       String
   country    String
-  type       String // e.g., "office", "restaurant"
+  type       String
   capacity   Int?
   rating     Float?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  events     Event[] // Events held at this place
-  attributes PlaceAttribute[] // Embedded or related
-  memories   MemoryPlace[] // Relation for memories at this place
-
-  @@index([name])
-  @@index([city])
-  @@index([country])
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+  owner      User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId    String           @db.ObjectId
+  attributes PlaceAttribute[]
+  events     Event[]
+  memories   MemoryPlace[]
 }
 
-model PlaceAttribute {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  place_id   String   @db.ObjectId
-  attribute  String
-  value      String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  place Place @relation(fields: [place_id], references: [id], onDelete: Cascade)
-
-  @@unique([place_id, attribute])
-  @@index([place_id])
+model Event {
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  date        DateTime
+  type        String
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String           @db.ObjectId
+  attributes  EventAttribute[]
+  place       Place?           @relation(fields: [place_id], references: [id], onDelete: SetNull)
+  place_id    String?          @db.ObjectId
+  memories    MemoryEvent[]
 }
 
-model Memory {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  title         String
-  description   String?
-  media_type    String // "photo", "document"
-  media_url     String
-  thumbnail_url String? // Optional thumbnail for media
-  media_name    String
-  date          DateTime
-  // place_id and event_id are handled by MemoryPlace and MemoryEvent relations for better M-N potential
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  places      MemoryPlace[] // Through relation table
-  events      MemoryEvent[] // Through relation table
-  people      MemoryPerson[]
-  reflections Reflection[]
-
-  @@index([title])
-  @@index([date])
-  @@index([media_name])
-}
-
-// Explicit Many-to-Many relation table for Memories and People
-model MemoryPerson {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  memory_id  String   @db.ObjectId
-  person_id  String   @db.ObjectId
-  created_at DateTime @default(now())
-
-  memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
-  person Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
-
-  @@unique([memory_id, person_id]) // Ensure a person is linked to a memory only once
-  @@index([memory_id])
-  @@index([person_id])
-}
-
-// Explicit Many-to-Many relation table for Memories and Places (if a memory can be in multiple places, or place references are complex)
-// If a memory has only one place_id, this is not strictly needed and place_id can be a direct field in Memory.
-// However, the original SQL schema had memories(place_id), which is a one-to-many from Place to Memory.
-// For consistency with how Prisma handles M-N and for flexibility, an explicit relation is shown.
-// If strictly one place per memory:
-// Memory model: place_id String? @db.ObjectId
-// Memory model: place Place? @relation(fields: [place_id], references: [id])
-// Remove MemoryPlace model in that case.
-
-model MemoryPlace {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  memory_id String @db.ObjectId
-  place_id  String @db.ObjectId
-
-  memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
-  place  Place  @relation(fields: [place_id], references: [id], onDelete: Cascade)
-
-  @@index([memory_id])
-  @@index([place_id])
-}
-
-model MemoryEvent {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  memory_id String @db.ObjectId
-  event_id  String @db.ObjectId
-
-  memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
-  event  Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
-
-  @@index([memory_id])
-  @@index([event_id])
+model Attribute {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  category    String?
+  description String?
+  entity_type String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String   @db.ObjectId
 }
 
 model Reflection {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  memory_id  String   @db.ObjectId
   title      String
   content    String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-
-  memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
-  // MongoDB text indexes are created differently, often on specific fields.
-  // You would define these in MongoDB directly or use Prisma's $runCommandRaw for complex indexes.
-  // For Prisma Client queries, you can use 'search' in .findMany({ where: { title: { search: "term" } } })
-  // if you set up a text index in MongoDB on the 'title' and 'content' fields.
-
-  @@index([memory_id])
-  @@index([title])
+  memory     Memory   @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  memory_id  String   @db.ObjectId
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId    String   @db.ObjectId
 }
 
-enum Plan {
-  FREE
-  PRO
+// Intermediary Models for Many-to-Many Relationships
+model MemoryPerson {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  memory    Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  memory_id String @db.ObjectId
+  person    Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
+  person_id String @db.ObjectId
+
+  @@unique([memory_id, person_id])
 }
 
-model User {
-  id                  String   @id @default(cuid()) @map("_id")
-  externalId          String?  @unique
-  quotaLimit          Int
-  plan                Plan     @default(FREE)
-  email               String   @unique
-  apiKey              String   @unique @default(cuid())
-  discordId           String?
-  collections         String[]
-  defaultCollectionId String
-  createDate          DateTime @default(now())
-  updateDate          DateTime @updatedAt
+model MemoryPlace {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  memory   Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  memory_id String @db.ObjectId
+  place    Place  @relation(fields: [place_id], references: [id], onDelete: Cascade)
+  place_id String @db.ObjectId
 
-  @@index([email, apiKey])
-  @@map("users")
+  @@unique([memory_id, place_id])
 }
 
-model Collection {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  ownerId           String
-  collectionName    String
-  collectionDetails String
-  userIds           String[]
-  memoryIds         String[]
-  eventIds          String[]
-  placeIds          String[]
-  peopleIds         String[]
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+model MemoryEvent {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  memory   Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  memory_id String @db.ObjectId
+  event    Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id String @db.ObjectId
 
-  @@map("collections")
+  @@unique([memory_id, event_id])
+}
+
+model PersonAttribute {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  person    Person @relation(fields: [person_id], references: [id], onDelete: Cascade)
+  person_id String @db.ObjectId
+  attribute String
+  value     String
+
+  @@unique([person_id, attribute])
+}
+
+model PlaceAttribute {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  place     Place  @relation(fields: [place_id], references: [id], onDelete: Cascade)
+  place_id  String @db.ObjectId
+  attribute String
+  value     String
+
+  @@unique([place_id, attribute])
+}
+
+model EventAttribute {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  event     Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event_id  String @db.ObjectId
+  attribute String
+  value     String
+
+  @@unique([event_id, attribute])
 }

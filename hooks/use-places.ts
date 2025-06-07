@@ -1,17 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Place } from "../types/places";
 import * as placesActions from "../app/actions/places";
+import { useAuth } from "@clerk/nextjs";
 
 export function usePlaces() {
+  const { userId } = useAuth();
   return useQuery({
-    queryKey: ["places"],
+    queryKey: ["places", userId],
     queryFn: () => placesActions.getAllPlaces(),
+    enabled: !!userId,
+  });
+}
+
+export function usePlaceDetails(id: string) {
+  const { userId } = useAuth();
+  return useQuery({
+    queryKey: ["place", id, userId],
+    queryFn: () => placesActions.getPlaceDetails(id),
+    enabled: !!id && !!userId,
   });
 }
 
 export function useAddPlaces() {
   const queryClient = useQueryClient();
-
+  const { userId } = useAuth();
   return useMutation({
     mutationFn: (
       placeData: {
@@ -22,153 +34,42 @@ export function useAddPlaces() {
         type: Place["type"];
       }[]
     ) => placesActions.addPlaces(placeData),
-    onMutate: async (placeData) => {
-      await queryClient.cancelQueries({ queryKey: ["places"] });
-      const previousPlaces = queryClient.getQueryData<Place[]>(["places"]);
-
-      const optimisticPlaces: Place[] = placeData.map((data) => ({
-        id: `temp-${Date.now()}-${Math.random()}`,
-        name: data.name.trim(),
-        address: data.address || "Address TBD",
-        city: data.city,
-        country: data.country,
-        type: data.type,
-        capacity: 50,
-        rating: 4.0,
-        attributes: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
-
-      queryClient.setQueryData<Place[]>(["places"], (old) =>
-        old ? [...optimisticPlaces, ...old] : optimisticPlaces
-      );
-
-      return { previousPlaces };
-    },
-    onSuccess: (newPlaces) => {
-      queryClient.setQueryData<Place[]>(["places"], (old = []) => {
-        const optimisticIds = old
-          .filter((p) => p.id.startsWith("temp-"))
-          .map((p) => p.id);
-        const remainingOld = old.filter((p) => !optimisticIds.includes(p.id));
-        return [...newPlaces, ...remainingOld];
-      });
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousPlaces) {
-        queryClient.setQueryData(["places"], context.previousPlaces);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["places"] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["places", userId] });
     },
   });
 }
 
 export function useUpdatePlace() {
   const queryClient = useQueryClient();
-
+  const { userId } = useAuth();
   return useMutation({
     mutationFn: ({
       id,
       updates,
     }: {
       id: string;
-      updates: Partial<Omit<Place, "id" | "createdAt">>;
+      updates: Partial<Omit<Place, "id" | "createdAt" | "ownerId">>;
     }) => placesActions.updatePlace(id, updates),
-    onMutate: async ({ id, updates }) => {
-      await queryClient.cancelQueries({ queryKey: ["places"] });
-      await queryClient.cancelQueries({ queryKey: ["place", id] });
-
-      const previousPlaces = queryClient.getQueryData<Place[]>(["places"]);
-      const previousPlace = queryClient.getQueryData<Place>(["place", id]);
-
-      // Optimistically update places list
-      queryClient.setQueryData<Place[]>(
-        ["places"],
-        (old) =>
-          old?.map((place) =>
-            place.id === id
-              ? { ...place, ...updates, updatedAt: new Date() }
-              : place
-          ) || []
-      );
-
-      // Optimistically update individual place
-      if (previousPlace) {
-        queryClient.setQueryData(["place", id], {
-          ...previousPlace,
-          ...updates,
-          updatedAt: new Date(),
-        });
+    onSuccess: (data) => {
+      if (data) {
+        queryClient.invalidateQueries({ queryKey: ["place", data.id, userId] });
       }
-
-      return { previousPlaces, previousPlace };
-    },
-    onSuccess: (updatedPlace) => {
-      if (updatedPlace) {
-        queryClient.setQueryData(["place", updatedPlace.id], updatedPlace);
-        queryClient.setQueryData<Place[]>(["places"], (old = []) => {
-          return old.map((place) =>
-            place.id === updatedPlace.id ? updatedPlace : place
-          );
-        });
-      }
-    },
-    onError: (err, { id }, context) => {
-      if (context?.previousPlaces) {
-        queryClient.setQueryData(["places"], context.previousPlaces);
-      }
-      if (context?.previousPlace) {
-        queryClient.setQueryData(["place", id], context.previousPlace);
-      }
-    },
-    onSettled: (data, error, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["places"] });
-      queryClient.invalidateQueries({ queryKey: ["place", id] });
+      queryClient.invalidateQueries({ queryKey: ["places", userId] });
     },
   });
 }
 
 export function useDeletePlace() {
   const queryClient = useQueryClient();
-
+  const { userId } = useAuth();
   return useMutation({
     mutationFn: (id: string) => placesActions.deletePlace(id),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["places"] });
-      const previousPlaces = queryClient.getQueryData<Place[]>(["places"]);
-
-      // Optimistically remove place from list
-      queryClient.setQueryData<Place[]>(
-        ["places"],
-        (old) => old?.filter((place) => place.id !== id) || []
-      );
-
-      return { previousPlaces };
-    },
-    onError: (err, id, context) => {
-      if (context?.previousPlaces) {
-        queryClient.setQueryData(["places"], context.previousPlaces);
+    onSuccess: (data, placeId) => {
+      if (data) {
+        queryClient.removeQueries({ queryKey: ["place", placeId, userId] });
       }
+      queryClient.invalidateQueries({ queryKey: ["places", userId] });
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["places"] });
-    },
-  });
-}
-
-export function useSearchPlaces() {
-  return useMutation({
-    mutationFn: (query: string) => placesActions.searchPlaces(query),
-  });
-}
-
-export function usePlaceDetails(id: string) {
-  return useQuery({
-    queryKey: ["place", id],
-    queryFn: () => placesActions.getPlaceDetails(id),
-    enabled: !!id,
   });
 }
