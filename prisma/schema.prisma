@@ -31,18 +31,18 @@ model Attribute {
 }
 
 model Person {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
   name           String
-  email          String?  
+  email          String?
   role           String?
   photo_url      String?
   date_of_birth  String?
   place_of_birth String?
   marital_status String? // e.g., "single", "married"
-  spouse_id      String?   @db.ObjectId // If this refers to another Person's ID
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
-  childrenIds    String[]  @db.ObjectId // Array of Person IDs
+  spouse_id      String?  @db.ObjectId // If this refers to another Person's ID
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  childrenIds    String[] @db.ObjectId // Array of Person IDs
 
   attributes PersonAttribute[] // Embedded or related
   memories   MemoryPerson[] // Relation for memories this person is in
@@ -81,19 +81,19 @@ model PersonAttribute {
 }
 
 model Event {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
   date        DateTime
-  place_id    String?   @db.ObjectId // Reference to Place ID
+  place_id    String?  @db.ObjectId // Reference to Place ID
   type        String // e.g., "meeting", "conference"
   capacity    Int?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  place      Place?            @relation(fields: [place_id], references: [id], onDelete: SetNull)
+  place      Place?           @relation(fields: [place_id], references: [id], onDelete: SetNull)
   attributes EventAttribute[] // Embedded or related
-  memories   MemoryEvent[]    // Relation for memories associated with this event
+  memories   MemoryEvent[] // Relation for memories associated with this event
 
   @@index([title])
   @@index([date])
@@ -126,9 +126,9 @@ model Place {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  events     Event[]          // Events held at this place
+  events     Event[] // Events held at this place
   attributes PlaceAttribute[] // Embedded or related
-  memories   MemoryPlace[]    // Relation for memories at this place
+  memories   MemoryPlace[] // Relation for memories at this place
 
   @@index([name])
   @@index([city])
@@ -150,17 +150,17 @@ model PlaceAttribute {
 }
 
 model Memory {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String?
-  media_type  String // "photo", "document"
-  media_url   String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String?
+  media_type    String // "photo", "document"
+  media_url     String
   thumbnail_url String? // Optional thumbnail for media
-  media_name  String
-  date        DateTime
+  media_name    String
+  date          DateTime
   // place_id and event_id are handled by MemoryPlace and MemoryEvent relations for better M-N potential
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   places      MemoryPlace[] // Through relation table
   events      MemoryEvent[] // Through relation table
@@ -203,6 +203,7 @@ model MemoryPlace {
 
   memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
   place  Place  @relation(fields: [place_id], references: [id], onDelete: Cascade)
+
   @@index([memory_id])
   @@index([place_id])
 }
@@ -214,10 +215,10 @@ model MemoryEvent {
 
   memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
   event  Event  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
   @@index([memory_id])
   @@index([event_id])
 }
-
 
 model Reflection {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -228,13 +229,13 @@ model Reflection {
   updated_at DateTime @updatedAt
 
   memory Memory @relation(fields: [memory_id], references: [id], onDelete: Cascade)
-
-  @@index([memory_id])
-  @@index([title])
   // MongoDB text indexes are created differently, often on specific fields.
   // You would define these in MongoDB directly or use Prisma's $runCommandRaw for complex indexes.
   // For Prisma Client queries, you can use 'search' in .findMany({ where: { title: { search: "term" } } })
   // if you set up a text index in MongoDB on the 'title' and 'content' fields.
+
+  @@index([memory_id])
+  @@index([title])
 }
 
 enum Plan {
@@ -260,19 +261,17 @@ model User {
 }
 
 model Collection {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  userId String
-
-  userEmail         String
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId           String
   collectionName    String
   collectionDetails String
-  users             String[]
-  memories          String[]
-  events            String[]
-  places            String[]
-  people            String[]
-  createDate        String
-  updateDate        String
+  userIds           String[]
+  memoryIds         String[]
+  eventIds          String[]
+  placeIds          String[]
+  peopleIds         String[]
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 
   @@map("collections")
 }
