@@ -12,7 +12,8 @@ import type { Memory as CustomMemoryType, MediaType } from "@/types/memories";
 import type { Reflection as CustomReflectionType } from "@/types/reflection";
 import { getPrismaUser } from "./auth-helper";
 
-// Transformer functions remain the same...
+// ... (transformMemory and other functions remain the same) ...
+
 function transformMemory(
   memory: PrismaMemory & {
     people: MemoryPerson[];
@@ -102,13 +103,16 @@ export async function addMemory(
 
   const newMemoryFromDb = await prisma.memory.create({
     data: {
-      ...restOfMemoryData,
+      title: restOfMemoryData.title,
+      description: restOfMemoryData.description,
+      date: restOfMemoryData.date,
       ownerId: user.id,
-      date_type: "exact",
+      // Map camelCase from the app to snake_case for the database
       media_type: restOfMemoryData.mediaType,
       media_url: restOfMemoryData.mediaUrl,
       thumbnail_url: restOfMemoryData.thumbnailUrl,
       media_name: restOfMemoryData.mediaName,
+      date_type: restOfMemoryData.dateType || "exact",
       people: {
         create: peopleIds.map((personId) => ({ person_id: personId })),
       },
@@ -124,6 +128,8 @@ export async function addMemory(
   });
   return transformMemory(newMemoryFromDb);
 }
+
+// ... (the rest of the functions remain the same) ...
 
 export async function updateMemoryDetails(
   id: string,

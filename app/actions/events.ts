@@ -9,6 +9,7 @@ import type {
 import type { Event as CustomEventType } from "@/types/events";
 import { getPrismaUser } from "./auth-helper";
 
+// ... (transformEvent and other functions remain the same) ...
 function transformEvent(
   event: PrismaEvent & { attributes?: PrismaEventAttribute[] }
 ): CustomEventType {
@@ -74,7 +75,7 @@ export async function addEvents(
       title: data.title.trim(),
       description: data.description,
       date: data.date,
-      dateType: data.dateType || "exact",
+      type: data.dateType || "exact", // FIX: Changed 'dateType' to 'type'
       ownerId: user.id,
       attributes: {
         create: data.attributes?.map((attr) => ({
@@ -94,6 +95,8 @@ export async function addEvents(
   }
   return createdEvents;
 }
+
+// ... (rest of the file remains the same) ...
 
 export async function updateEvent(
   eventId: string,

@@ -4,18 +4,19 @@
 
 import { Heading } from "@/components/heading";
 import { LoadingSpinner } from "@/components/loading-spinner";
-// import { client} from "@/lib/client"
 import { useQuery } from "@tanstack/react-query";
 import { LucideProps } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Import useSearchParams
 import { useEffect } from "react";
 
 const Page = () => {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Get the search parameters
+  const intent = searchParams.get("intent"); // Read the intent value
+
   console.log("Welcome page");
   const { data } = useQuery({
     queryFn: async () => {
-      // const res = await client.auth.getDatabaseSyncStatus.$get()
       const res = await fetch("/api/auth");
       return await res.json();
     },
@@ -28,15 +29,19 @@ const Page = () => {
   //DEVNOTE - HOW DO I CATCH AN ERROR HERE? ******************
 
   useEffect(() => {
-    if (data?.isSynced) router.push("/home");
-  }, [data, router]);
+    if (data?.isSynced) {
+      // Construct the final redirect URL, including the intent if it exists
+      const redirectUrl = intent ? `/home?intent=${intent}` : "/home";
+      router.push(redirectUrl);
+    }
+  }, [data, router, intent]); // Add intent to the dependency array
 
   return (
     <div className="flex w-full flex-1 items-center justify-center px-4">
       <BackgroundPattern className="absolute inset-0 left-1/2 z-0 -translate-x-1/2 opacity-75" />
 
       <div className="relative z-10 flex -translate-y-1/2 flex-col items-center gap-6 text-center">
-        <LoadingSpinner size="md" message="working..."/>
+        <LoadingSpinner size="md" message="working..." />
         <Heading>Creating your account...</Heading>
         <p className="text-base/7 text-gray-600 max-w-prose">
           Just a moment while we set things up for you.
@@ -45,6 +50,8 @@ const Page = () => {
     </div>
   );
 };
+
+// ... BackgroundPattern component remains the same ...
 
 const BackgroundPattern = (props: LucideProps) => {
   return (

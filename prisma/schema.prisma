@@ -34,8 +34,8 @@ model Collection {
   collectionDetails String
   userEmail         String
   users             String[]
-  createDate        String
-  updateDate        String
+  createDate        DateTime
+  updateDate        DateTime
   owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId           String   @db.ObjectId
 }
