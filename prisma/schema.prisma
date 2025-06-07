@@ -236,3 +236,25 @@ model Reflection {
   // For Prisma Client queries, you can use 'search' in .findMany({ where: { title: { search: "term" } } })
   // if you set up a text index in MongoDB on the 'title' and 'content' fields.
 }
+
+enum Plan {
+  FREE
+  PRO
+}
+
+model User {
+  id                  String   @id @default(cuid()) @map("_id")
+  externalId          String?  @unique
+  quotaLimit          Int
+  plan                Plan     @default(FREE)
+  email               String   @unique
+  apiKey              String   @unique @default(cuid())
+  discordId           String?
+  collections         String[]
+  defaultCollectionId String
+  createDate          DateTime @default(now())
+  updateDate          DateTime @updatedAt
+
+  @@index([email, apiKey])
+  @@map("users")
+}

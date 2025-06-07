@@ -3,14 +3,14 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { QueryProvider } from "./query-provider"
+import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "People Selector Demo",
-  description: "A demo of people selector with TanStack Query",
-    generator: 'v0.dev'
-}
+  title: "cronicle",
+  description: "Tell your story, your way",
+};
 
 export default function Layout({
   children,
@@ -20,7 +20,9 @@ export default function Layout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <QueryProvider>{children}</QueryProvider>
+      <ClerkProvider dynamic>
+          <QueryProvider>{children}</QueryProvider>
+      </ClerkProvider>
       </body>
     </html>
   )

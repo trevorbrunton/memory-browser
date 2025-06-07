@@ -11,9 +11,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Save, ArrowLeft, User, Mail, Phone, Briefcase, Plus, X, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import { useAddPeople } from "../../hooks/use-people"
-import { AttributeSelector } from "../../components/attribute-selector"
-import type { Person, PersonAttribute } from "../../types/people"
+import { useAddPeople } from "@/hooks/use-people"
+import { AttributeSelector } from "@/components/attribute-selector"
+import type { Person, PersonAttribute } from "@/types/people"
 
 export default function CreatePersonPage() {
   const router = useRouter()

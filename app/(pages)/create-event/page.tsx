@@ -11,10 +11,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Save, ArrowLeft, Calendar, Clock, MapPin, Users, Plus, X, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import { useAddEvents } from "../../hooks/use-events"
-import { usePlaces } from "../../hooks/use-places"
-import { AttributeSelector } from "../../components/attribute-selector"
-import type { Event, EventAttribute } from "../../types/events"
+import { useAddEvents } from "@/hooks/use-events"
+import { usePlaces } from "@/hooks/use-places"
+import { AttributeSelector } from "@/components/attribute-selector"
+import type { Event, EventAttribute } from "@/types/events"
 
 export default function CreateEventPage() {
   const router = useRouter()
