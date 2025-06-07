@@ -258,3 +258,21 @@ model User {
   @@index([email, apiKey])
   @@map("users")
 }
+
+model Collection {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String
+
+  userEmail         String
+  collectionName    String
+  collectionDetails String
+  users             String[]
+  memories          String[]
+  events            String[]
+  places            String[]
+  people            String[]
+  createDate        String
+  updateDate        String
+
+  @@map("collections")
+}

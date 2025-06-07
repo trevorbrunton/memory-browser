@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { db } from "@/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -13,9 +13,9 @@ export async function GET() {
         { status: 401 }
       );
     }
-      const user = await db.user.findFirst({
-        where: { externalId: auth.id },
-      });
+    const user = await prisma.user.findFirst({
+      where: { externalId: auth.id },
+    });
 
     return new NextResponse(
       JSON.stringify({

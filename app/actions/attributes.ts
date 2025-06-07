@@ -1,9 +1,9 @@
 // app/actions/attributes.ts
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import type { Attribute as PrismaAttribute } from "@prisma/client";
-import type { Attribute as CustomAttributeType } from "../../types/attributes";
+import type { Attribute as CustomAttributeType } from "@/types/attributes";
 
 function transformAttribute(attr: PrismaAttribute): CustomAttributeType {
   return {

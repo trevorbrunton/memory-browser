@@ -1,7 +1,7 @@
 // app/actions/places.ts
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import type {
   Place as PrismaPlace,
   PlaceAttribute as PrismaPlaceAttribute,
@@ -9,7 +9,7 @@ import type {
 import type {
   Place as CustomPlaceType,
   PlaceAttribute as CustomPlaceAttributeType,
-} from "../../types/places";
+} from "@/types/places";
 
 function transformPlace(
   place: PrismaPlace & { attributes?: PrismaPlaceAttribute[] }

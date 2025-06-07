@@ -1,7 +1,8 @@
 // app/actions/memories.ts
 "use server";
-
-import prisma from "../../lib/prisma";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { nanoid } from "@/lib/utils";
+import prisma from "@/lib/prisma";
 import type {
   Memory as PrismaMemory,
   Reflection as PrismaReflection,
@@ -562,4 +563,55 @@ export async function deleteReflection(reflectionId: string): Promise<boolean> {
     console.error("❌ Error deleting reflection:", error);
     return false;
   }
+}
+
+const s3Client = new S3Client({
+  region: process.env.AWS_BUCKET_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+const generateFileName = (name: string): string => `${nanoid()}_${name}`;
+
+export async function addMemoryWithUpload(
+  formData: FormData
+): Promise<CustomMemoryType> {
+  const file = formData.get("file") as File;
+  const memoryDataString = formData.get("memoryData") as string;
+  const memoryData = JSON.parse(memoryDataString);
+
+  if (!file) {
+    throw new Error("No file provided.");
+  }
+
+  // 1. Upload file to S3
+  const fileBuffer = await file.arrayBuffer();
+  const uploadedFileName = generateFileName(file.name);
+
+  const putObjectCommand = new PutObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME!,
+    Key: uploadedFileName,
+    Body: Buffer.from(fileBuffer),
+    ContentType: file.type,
+    ContentLength: file.size,
+  });
+
+  await s3Client.send(putObjectCommand);
+  const mediaUrl = `https://${process.env.NEXT_PUBLIC_AWS_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_BUCKET_REGION}.amazonaws.com/${uploadedFileName}`;
+
+  // Thumbnail logic can be re-added here if needed
+
+  // 2. Prepare data for database
+  const fullMemoryData = {
+    ...memoryData,
+    mediaType: file.type.startsWith("image/") ? "photo" : "document",
+    mediaUrl,
+    mediaName: file.name,
+    date: new Date(memoryData.date),
+  };
+
+  // 3. Save memory to database using the existing action
+  return addMemory(fullMemoryData);
 }

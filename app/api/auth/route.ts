@@ -1,7 +1,6 @@
-import {  NextResponse } from "next/server";
-import { db } from "@/db";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { currentUser } from "@clerk/nextjs/server";
-
 
 export async function GET() {
   try {
@@ -15,25 +14,24 @@ export async function GET() {
       );
     }
 
-    const user = await db.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: { externalId: auth.id },
     });
 
     console.log("USER IN DB:", user);
-   
 
     if (!user) {
-      const newUser = await db.user.create({
+      const newUser = await prisma.user.create({
         data: {
           externalId: auth.id,
           email: auth.emailAddresses[0].emailAddress,
           defaultCollectionId: "",
-          quotaLimit: 100, 
-          collections: []
+          quotaLimit: 100,
+          collections: [],
         },
       });
 
-      const newCollection = await db.collection.create({
+      const newCollection = await prisma.collection.create({
         data: {
           collectionName: "Recent Uploads",
           collectionDetails: "A collection of your most recent uploads",
@@ -46,7 +44,7 @@ export async function GET() {
         },
       });
 
-      await db.user.update({
+      await prisma.user.update({
         where: { id: newUser.id },
         data: {
           defaultCollectionId: newCollection.id,

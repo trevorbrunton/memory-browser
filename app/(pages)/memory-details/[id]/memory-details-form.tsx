@@ -19,10 +19,10 @@ import {
   FileText,
   MessageSquare,
 } from "lucide-react";
-import { useUpdateMemoryDetails } from "../../../hooks/use-memories"; // Keep this for the main details
-import { usePeople } from "../../../hooks/use-people";
-import { usePlaces } from "../../../hooks/use-places";
-import { useEvents } from "../../../hooks/use-events";
+import { useUpdateMemoryDetails } from "@/hooks/use-memories"; // Keep this for the main details
+import { usePeople } from "@/hooks/use-people";
+import { usePlaces } from "@/hooks/use-places";
+import { useEvents } from "@/hooks/use-events";
 import type { Memory } from "@/types/memories";
 import type { Reflection } from "@/types/reflection"; // Make sure this type exists
 import { useToast } from "@/hooks/use-toast";

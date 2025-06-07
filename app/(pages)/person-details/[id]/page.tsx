@@ -1,18 +1,23 @@
-"use client"
+"use client";
 
-import { useParams, useRouter } from "next/navigation"
-import { PersonDetailsForm } from "./person-details-form"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Loader2 } from "lucide-react"
-import { usePersonDetails } from "../../../hooks/use-people"
-import { Card } from "@/components/ui/card"
+import { useParams, useRouter } from "next/navigation";
+import { PersonDetailsForm } from "./person-details-form";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { usePersonDetails } from "@/hooks/use-people";
+import { Card } from "@/components/ui/card";
 
 export default function PersonDetailsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const personId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const personId = params.id as string;
 
-  const { data: person, isLoading, isError, error } = usePersonDetails(personId)
+  const {
+    data: person,
+    isLoading,
+    isError,
+    error,
+  } = usePersonDetails(personId);
 
   if (isLoading) {
     return (
@@ -22,22 +27,26 @@ export default function PersonDetailsPage() {
           <span className="text-lg">Loading person details...</span>
         </div>
       </div>
-    )
+    );
   }
 
   if (isError || !person) {
     return (
       <div className="p-8 max-w-6xl mx-auto">
         <Card className="p-6 text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Person</h2>
-          <p className="text-gray-600 mb-4">{error?.message || "Person not found"}</p>
+          <h2 className="text-xl font-semibold text-red-600 mb-2">
+            Error Loading Person
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {error?.message || "Person not found"}
+          </p>
           <Button onClick={() => router.push("/")} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to People List
           </Button>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -54,5 +63,5 @@ export default function PersonDetailsPage() {
 
       <PersonDetailsForm person={person} />
     </div>
-  )
+  );
 }

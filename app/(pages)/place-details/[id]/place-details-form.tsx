@@ -28,8 +28,8 @@ import {
 import type { Place, PlaceAttribute } from "@/types/places";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { AttributeSelector } from "../../../components/attribute-selector";
-import { useUpdatePlace } from "../../../hooks/use-places"; // FIX: Import the correct hook
+import { AttributeSelector } from "@/components/attribute-selector";
+import { useUpdatePlace } from "@/hooks/use-places"; // FIX: Import the correct hook
 
 interface PlaceDetailsFormProps {
   place: Place;

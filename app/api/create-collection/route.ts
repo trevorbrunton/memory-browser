@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { db } from "@/db";
+import { prisma } from "@/lib/prisma";
 
 const createCollectionSchema = z.object({
   collectionName: z.string().min(1, "Collection name is required"),
@@ -12,12 +12,12 @@ const createCollectionSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-      const json = await request.json();
-      console.log('json', json)
-      const body = createCollectionSchema.parse(json);
-      console.log('body', body)
+    const json = await request.json();
+    console.log("json", json);
+    const body = createCollectionSchema.parse(json);
+    console.log("body", body);
 
-    const newCollection = await db.collection.create({
+    const newCollection = await prisma.collection.create({
       data: {
         userId: body.userId,
         userEmail: body.userEmail,
@@ -28,18 +28,6 @@ export async function POST(request: Request) {
         updateDate: new Date().toISOString(),
       },
     });
-
-    // Update the user's collections array
-    // await prisma.user.update({
-    //   where: { id: body.userId },
-    //   data: {
-    //     collections: {
-    //       push: body.collectionId,
-    //     },
-    //   },
-      // });
-      
-      //DEVNOTE - SEEMS TO BE A CACHE REFRESH ISSUE !!!!!!!!!!!
 
     return NextResponse.json(newCollection, { status: 201 });
   } catch (error) {

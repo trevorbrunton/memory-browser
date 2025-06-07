@@ -1,7 +1,7 @@
 // app/actions/people.ts
 "use server";
 
-import prisma from "../../lib/prisma";
+import prisma from "@/lib/prisma";
 import type {
   Person as PrismaPerson,
   PersonAttribute as PrismaPersonAttribute,
@@ -9,7 +9,7 @@ import type {
 import type {
   Person as CustomPersonType,
   PersonAttribute as CustomPersonAttributeType,
-} from "../../types/people";
+} from "@/types/people";
 
 function transformPerson(
   person: PrismaPerson & { attributes?: PrismaPersonAttribute[] }

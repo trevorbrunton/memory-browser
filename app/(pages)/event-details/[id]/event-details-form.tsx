@@ -20,13 +20,13 @@ import {
   Settings,
   Loader2,
 } from "lucide-react"; // Added Loader2
-import { useUpdateEventDetails } from "../../../hooks/use-events"; //
-import { usePlaces } from "../../../hooks/use-places"; //
+import { useUpdateEventDetails } from "@/hooks/use-events"; //
+import { usePlaces } from "@/hooks/use-places"; //
 import type { Event, EventAttribute } from "@/types/events"; //
 import { useToast } from "@/hooks/use-toast"; //
 import { useRouter } from "next/navigation";
-import { AttributeSelector } from "../../../components/attribute-selector"; //
-import { PlaceSelector } from "../../../components/place-selector"; //
+import { AttributeSelector } from "@/components/attribute-selector"; //
+import { PlaceSelector } from "@/components/place-selector"; //
 
 interface EventDetailsFormProps {
   event: Event;

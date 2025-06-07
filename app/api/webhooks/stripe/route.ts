@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import Stripe from "stripe";
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return new Response("Invalid metadata", { status: 400 });
     }
     console.log("webhook received");
-    await db.user.update({
+    await prisma.user.update({
       where: { externalId: userId },
       data: { plan: "PRO" },
     });

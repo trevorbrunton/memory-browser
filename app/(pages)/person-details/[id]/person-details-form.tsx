@@ -24,7 +24,7 @@ import {
   X,
   Settings,
 } from "lucide-react";
-import { usePeople, useUpdatePerson } from "../../../hooks/use-people"; // FIX: Import the correct hooks
+import { usePeople, useUpdatePerson } from "@/hooks/use-people"; // FIX: Import the correct hooks
 import { PeopleMultipleSelector } from "@/components/people-multiple-selector";
 import { AttributeSelector } from "@/components/attribute-selector";
 import type { Person, PersonAttribute } from "@/types/people";
