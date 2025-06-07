@@ -13,17 +13,23 @@ export function useAddPeople() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (names: string[]) => peopleActions.addPeople(names),
-    onMutate: async (names) => {
+    mutationFn: (peopleData: Omit<Person, "id" | "createdAt" | "updatedAt">[]) => peopleActions.addPeople(peopleData.map(p => p.name)),
+    onMutate: async (peopleData) => {
       await queryClient.cancelQueries({ queryKey: ["people"] })
       const previousPeople = queryClient.getQueryData<Person[]>(["people"])
 
-      const optimisticPeople: Person[] = names.map((name) => ({
+      const optimisticPeople: Person[] = peopleData.map((data) => ({
         id: `temp-${Date.now()}-${Math.random()}`,
-        name: name.trim(),
-        email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-        role: "New User",
-        attributes: [],
+        name: data.name.trim(),
+        email: data.email || undefined,
+        role: data.role || undefined,
+        photoUrl: data.photoUrl || undefined,
+        dateOfBirth: data.dateOfBirth || undefined,
+        placeOfBirth: data.placeOfBirth || undefined,
+        maritalStatus: data.maritalStatus || undefined,
+        spouseId: data.spouseId || undefined,
+        childrenIds: data.childrenIds || [],
+        attributes: data.attributes || [],
         createdAt: new Date(),
         updatedAt: new Date(),
       }))
@@ -41,6 +47,51 @@ export function useAddPeople() {
       queryClient.invalidateQueries({ queryKey: ["people"] })
     },
   })
+}
+
+// New hook for creating a single person with full details
+export function useCreatePerson() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (personData: Omit<Person, "id" | "createdAt" | "updatedAt">) =>
+      peopleActions.addPeople([personData.name]),
+    onMutate: async (personData) => {
+      await queryClient.cancelQueries({ queryKey: ["people"] });
+      const previousPeople = queryClient.getQueryData<Person[]>(["people"]);
+
+      const optimisticPerson: Person = {
+        id: `temp-${Date.now()}-${Math.random()}`,
+        ...personData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      queryClient.setQueryData<Person[]>(["people"], (old) =>
+        old ? [optimisticPerson, ...old] : [optimisticPerson]
+      );
+
+      return { previousPeople, optimisticPerson };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousPeople) {
+        queryClient.setQueryData(["people"], context.previousPeople);
+      }
+    },
+    onSuccess: (newPerson, variables, context) => {
+      // Replace optimistic update with real data
+      queryClient.setQueryData<Person[]>(["people"], (old: Person[] = []) =>
+        old.map((person) =>
+          person.id === context?.optimisticPerson?.id
+            ? { ...person, ...newPerson }
+            : person
+        )
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["people"] });
+    },
+  });
 }
 
 export function useUpdatePerson() {

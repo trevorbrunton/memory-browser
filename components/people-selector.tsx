@@ -57,7 +57,9 @@ export function PeopleSelector({
     if (pendingUpdates.length > 0) {
       try {
         // Use TanStack Query mutation to add people
-        const newPeople = await addPeopleMutation.mutateAsync(pendingUpdates)
+        const newPeople = await addPeopleMutation.mutateAsync(
+          pendingUpdates.map((name) => ({ name }))
+        )
 
         // Auto-select the newly added people
         const newPersonIds = newPeople.map((p) => p.id)

@@ -1,140 +1,103 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Save,
-  ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
-  Plus,
-  X,
-  Settings,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
-import { useAddPeople } from "@/hooks/use-people";
-import { AttributeSelector } from "@/components/attribute-selector";
-import type { Person, PersonAttribute } from "../../types/people";
+import { useState } from "react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import { Save, ArrowLeft, User, Mail, Phone, Briefcase, Plus, X, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { useAddPeople } from "../../hooks/use-people"
+import { AttributeSelector } from "../../components/attribute-selector"
+import type { Person, PersonAttribute } from "../../types/people"
 
 export default function CreatePersonPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const addPeopleMutation = useAddPeople();
+  const router = useRouter()
+  const { toast } = useToast()
+  const addPeopleMutation = useAddPeople()
 
-  // Form state matches Person type
-  const [formData, setFormData] = useState<
-    Omit<Person, "id" | "createdAt" | "updatedAt">
-  >({
+  // Form state
+  const [formData, setFormData] = useState({
     name: "",
-    email: undefined,
-    role: undefined,
-    photoUrl: undefined,
-    dateOfBirth: undefined,
-    placeOfBirth: undefined,
-    maritalStatus: undefined,
-    spouseId: undefined,
-    childrenIds: [],
-    attributes: [],
-  });
+    email: "",
+    phone: "",
+    role: "",
+    company: "",
+    notes: "",
+    attributes: [] as PersonAttribute[],
+  })
 
-  // Handle input changes
-  const handleInputChange = (
-    field: keyof Omit<Person, "id" | "createdAt" | "updatedAt">,
-    value: any
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const handleInputChange = (field: string, value: string | PersonAttribute[]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
 
-  // Save handler conforms to Person type
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast({
         title: "Error",
         description: "Person name is required",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
 
     try {
-      const personData: Omit<Person, "id" | "createdAt" | "updatedAt"> = {
-        ...formData,
+      const personData = {
         name: formData.name.trim(),
-        email: formData.email?.trim() || undefined,
-        role: formData.role?.trim() || undefined,
-        photoUrl: formData.photoUrl?.trim() || undefined,
-        dateOfBirth: formData.dateOfBirth?.trim() || undefined,
-        placeOfBirth: formData.placeOfBirth?.trim() || undefined,
-        maritalStatus: formData.maritalStatus,
-        spouseId: formData.spouseId?.trim() || undefined,
-        childrenIds: formData.childrenIds?.filter(Boolean) || [],
-        attributes: formData.attributes || [],
-      };
+        email: formData.email.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        role: formData.role.trim() || undefined,
+        company: formData.company.trim() || undefined,
+        notes: formData.notes.trim() || undefined,
+        attributes: formData.attributes,
+      }
 
-      // The backend should add id, createdAt, updatedAt
-      const newPeople = await addPeopleMutation.mutateAsync([personData]);
+      const newPeople = await addPeopleMutation.mutateAsync([personData])
 
       toast({
         title: "Success",
         description: "Person created successfully",
-      });
+      })
 
+      // Navigate to the new person's details page
       if (newPeople.length > 0) {
-        router.push(`/person-details/${newPeople[0].id}`);
+        router.push(`/person-details/${newPeople[0].id}`)
       } else {
-        router.push("/");
+        router.push("/")
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to create person",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
+
+
 
   // Attribute management functions
   const addAttribute = () => {
-    const newAttribute: PersonAttribute = { attribute: "", value: "" };
-    handleInputChange("attributes", [
-      ...(formData.attributes || []),
-      newAttribute,
-    ]);
-  };
+    const newAttribute: PersonAttribute = { attribute: "", value: "" }
+    handleInputChange("attributes", [...formData.attributes, newAttribute])
+  }
 
-  const updateAttribute = (
-    index: number,
-    field: "attribute" | "value",
-    value: string
-  ) => {
-    const updatedAttributes = [...(formData.attributes || [])];
-    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value };
-    handleInputChange("attributes", updatedAttributes);
-  };
+  const updateAttribute = (index: number, field: "attribute" | "value", value: string) => {
+    const updatedAttributes = [...formData.attributes]
+    updatedAttributes[index] = { ...updatedAttributes[index], [field]: value }
+    handleInputChange("attributes", updatedAttributes)
+  }
 
   const removeAttribute = (index: number) => {
-    const updatedAttributes = (formData.attributes || []).filter(
-      (_, i) => i !== index
-    );
-    handleInputChange("attributes", updatedAttributes);
-  };
+    const updatedAttributes = formData.attributes.filter((_, i) => i !== index)
+    handleInputChange("attributes", updatedAttributes)
+  }
 
-  const canSave = formData.name.trim() && !addPeopleMutation.isPending;
+  const canSave = formData.name.trim() && !addPeopleMutation.isPending
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -149,11 +112,7 @@ export default function CreatePersonPage() {
             Create New Person
           </h1>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={!canSave}
-          className="min-w-[120px]"
-        >
+        <Button onClick={handleSave} disabled={!canSave} className="min-w-[120px]">
           {addPeopleMutation.isPending ? (
             <>
               <Save className="h-4 w-4 mr-2 animate-spin" />
@@ -181,9 +140,7 @@ export default function CreatePersonPage() {
                 <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-2xl font-bold mb-3">
                   {formData.name ? formData.name.charAt(0).toUpperCase() : "?"}
                 </div>
-                <h4 className="font-medium text-lg">
-                  {formData.name || "New Person"}
-                </h4>
+                <h4 className="font-medium text-lg">{formData.name || "New Person"}</h4>
               </div>
 
               <div className="space-y-2 text-sm">
@@ -193,57 +150,34 @@ export default function CreatePersonPage() {
                     <span>{formData.email}</span>
                   </div>
                 )}
-                {formData.role && (
+                {formData.phone && (
+                  <div className="flex items-center text-gray-600">
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>{formData.phone}</span>
+                  </div>
+                )}
+                {(formData.role || formData.company) && (
                   <div className="flex items-center text-gray-600">
                     <Briefcase className="h-4 w-4 mr-2" />
-                    <span>{formData.role}</span>
-                  </div>
-                )}
-                {formData.photoUrl && (
-                  <div className="flex items-center text-gray-600">
-                    <User className="h-4 w-4 mr-2" />
-                    <span>{formData.photoUrl}</span>
-                  </div>
-                )}
-                {formData.dateOfBirth && (
-                  <div className="flex items-center text-gray-600">
-                    <span>Date of Birth: {formData.dateOfBirth}</span>
-                  </div>
-                )}
-                {formData.placeOfBirth && (
-                  <div className="flex items-center text-gray-600">
-                    <span>Place of Birth: {formData.placeOfBirth}</span>
-                  </div>
-                )}
-                {formData.maritalStatus && (
-                  <div className="flex items-center text-gray-600">
-                    <span>Marital Status: {formData.maritalStatus}</span>
-                  </div>
-                )}
-                {formData.spouseId && (
-                  <div className="flex items-center text-gray-600">
-                    <span>Spouse ID: {formData.spouseId}</span>
-                  </div>
-                )}
-                {formData.childrenIds && formData.childrenIds.length > 0 && (
-                  <div className="flex items-center text-gray-600">
-                    <span>Children IDs: {formData.childrenIds.join(", ")}</span>
+                    <span>
+                      {formData.role && formData.company
+                        ? `${formData.role} at ${formData.company}`
+                        : formData.role || formData.company}
+                    </span>
                   </div>
                 )}
               </div>
 
-              {formData.attributes && formData.attributes.length > 0 && (
+
+
+              {formData.attributes.length > 0 && (
                 <div className="mt-4 p-3 bg-gray-50 rounded">
                   <h5 className="font-medium text-sm mb-2">Attributes:</h5>
                   <div className="flex flex-wrap gap-1">
                     {formData.attributes
                       .filter((attr) => attr.attribute && attr.value)
                       .map((attr, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="text-xs"
-                        >
+                        <Badge key={index} variant="secondary" className="text-xs">
                           {attr.attribute}: {attr.value}
                         </Badge>
                       ))}
@@ -272,92 +206,7 @@ export default function CreatePersonPage() {
                   placeholder="Enter full name"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="photoUrl">Photo URL</Label>
-                <Input
-                  id="photoUrl"
-                  value={formData.photoUrl || ""}
-                  onChange={(e) =>
-                    handleInputChange("photoUrl", e.target.value)
-                  }
-                  placeholder="Enter photo URL"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth || ""}
-                  onChange={(e) =>
-                    handleInputChange("dateOfBirth", e.target.value)
-                  }
-                  placeholder="Enter date of birth"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="placeOfBirth">Place of Birth</Label>
-                <Input
-                  id="placeOfBirth"
-                  value={formData.placeOfBirth || ""}
-                  onChange={(e) =>
-                    handleInputChange("placeOfBirth", e.target.value)
-                  }
-                  placeholder="Enter place of birth"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="maritalStatus">Marital Status</Label>
-                <Select
-                  value={formData.maritalStatus || ""}
-                  onValueChange={(value) =>
-                    handleInputChange(
-                      "maritalStatus",
-                      value as Person["maritalStatus"]
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select marital status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="spouseId">Spouse ID</Label>
-                <Input
-                  id="spouseId"
-                  value={formData.spouseId || ""}
-                  onChange={(e) =>
-                    handleInputChange("spouseId", e.target.value)
-                  }
-                  placeholder="Enter spouse ID"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="childrenIds">
-                  Children IDs (comma separated)
-                </Label>
-                <Input
-                  id="childrenIds"
-                  value={formData.childrenIds?.join(",") || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "childrenIds",
-                      e.target.value
-                        .split(",")
-                        .map((id) => id.trim())
-                        .filter(Boolean)
-                    )
-                  }
-                  placeholder="Enter children IDs"
-                />
-              </div>
+             
             </div>
           </Card>
 
@@ -373,9 +222,19 @@ export default function CreatePersonPage() {
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email || ""}
+                  value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   placeholder="Enter email address"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  placeholder="Enter phone number"
                 />
               </div>
             </div>
@@ -392,11 +251,30 @@ export default function CreatePersonPage() {
                 <Label htmlFor="role">Role/Title</Label>
                 <Input
                   id="role"
-                  value={formData.role || ""}
+                  value={formData.role}
                   onChange={(e) => handleInputChange("role", e.target.value)}
                   placeholder="Enter job title or role"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="company">Company</Label>
+                <Input
+                  id="company"
+                  value={formData.company}
+                  onChange={(e) => handleInputChange("company", e.target.value)}
+                  placeholder="Enter company name"
+                />
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => handleInputChange("notes", e.target.value)}
+                placeholder="Add any additional notes about this person..."
+                rows={3}
+              />
             </div>
           </Card>
 
@@ -414,24 +292,18 @@ export default function CreatePersonPage() {
             </div>
 
             <div className="space-y-4">
-              {!formData.attributes || formData.attributes.length === 0 ? (
+              {formData.attributes.length === 0 ? (
                 <p className="text-sm text-gray-500 italic text-center py-4">
-                  No additional attributes. Click "Add Attribute" to add
-                  interests, social media, or other details.
+                  No additional attributes. Click "Add Attribute" to add interests, social media, or other details.
                 </p>
               ) : (
                 formData.attributes.map((attr, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg"
-                  >
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 border rounded-lg">
                     <div className="space-y-2">
                       <Label>Attribute</Label>
                       <AttributeSelector
                         value={attr.attribute}
-                        onChange={(value) =>
-                          updateAttribute(index, "attribute", value)
-                        }
+                        onChange={(value) => updateAttribute(index, "attribute", value)}
                         placeholder="Select or add attribute..."
                         entityType="person"
                       />
@@ -450,9 +322,7 @@ export default function CreatePersonPage() {
                       </div>
                       <Input
                         value={attr.value}
-                        onChange={(e) =>
-                          updateAttribute(index, "value", e.target.value)
-                        }
+                        onChange={(e) => updateAttribute(index, "value", e.target.value)}
                         placeholder="Enter value..."
                       />
                     </div>
@@ -461,20 +331,14 @@ export default function CreatePersonPage() {
               )}
             </div>
 
-            {formData.attributes && formData.attributes.length > 0 && (
+            {formData.attributes.length > 0 && (
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">
-                  Current Attributes:
-                </h4>
+                <h4 className="font-medium text-sm mb-2">Current Attributes:</h4>
                 <div className="flex flex-wrap gap-2">
                   {formData.attributes
                     .filter((attr) => attr.attribute && attr.value)
                     .map((attr, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="text-xs"
-                      >
+                      <Badge key={index} variant="secondary" className="text-xs">
                         {attr.attribute}: {attr.value}
                       </Badge>
                     ))}
@@ -485,24 +349,16 @@ export default function CreatePersonPage() {
 
           {/* Help Text */}
           <Card className="p-4 bg-purple-50 border-purple-200">
-            <h4 className="font-medium text-sm mb-2 text-purple-800">
-              💡 Tips for Creating People
-            </h4>
+            <h4 className="font-medium text-sm mb-2 text-purple-800">💡 Tips for Creating People</h4>
             <ul className="text-sm text-purple-700 space-y-1">
               <li>• Use full names to avoid confusion with similar names</li>
               <li>• Add contact information to easily reach out later</li>
-              <li>
-                • Use attributes to store birthdays, social media handles, or
-                interests
-              </li>
-              <li>
-                • Notes are great for remembering how you met or important
-                details
-              </li>
+              <li>• Use attributes to store birthdays, social media handles, or interests</li>
+              <li>• Notes are great for remembering how you met or important details</li>
             </ul>
           </Card>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -91,7 +91,7 @@ export function TabNavigation({
           >
             <div className="hidden sm:flex">
               <Plus className="h-4 w-4 mr-2" />
-              Create Place
+              Create Person
             </div>
             <div className="flex sm:hidden">
               <Plus className="h-4 w-4" />
