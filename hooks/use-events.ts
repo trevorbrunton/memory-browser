@@ -6,7 +6,6 @@ import type { Event as CustomEventType } from "@/types/events";
 import * as eventsActions from "@/app/actions/events";
 import { useAuth } from "@clerk/nextjs";
 
-// --- DTOs for Mutations ---
 interface AddEventsDTO {
   title: string;
   description?: string;
@@ -15,7 +14,13 @@ interface AddEventsDTO {
   dateType?: CustomEventType["dateType"];
 }
 
-// --- Query Hooks ---
+interface UpdateEventDTO {
+  id: string;
+  updates: Partial<
+    Omit<CustomEventType, "id" | "createdAt" | "updatedAt" | "ownerId">
+  >;
+}
+
 export function useEvents() {
   const { userId } = useAuth();
   return useQuery<CustomEventType[], Error>({
@@ -34,7 +39,6 @@ export function useEventDetails(id: string) {
   });
 }
 
-// --- Mutation Hooks ---
 export function useAddEvents() {
   const queryClient = useQueryClient();
   const { userId } = useAuth();
@@ -46,23 +50,19 @@ export function useAddEvents() {
     },
   });
 }
+
 export function useUpdateEventDetails() {
   const queryClient = useQueryClient();
   const { userId } = useAuth();
-  return useMutation<
-    CustomEventType | null,
-    Error,
-    {
-      id: string;
-      updates: Partial<Omit<CustomEventType, "id" | "createdAt" | "updatedAt">>;
-    }
-  >({
+  return useMutation<CustomEventType | null, Error, UpdateEventDTO>({
     mutationFn: ({ id, updates }) => eventsActions.updateEvent(id, updates),
-    onSuccess: (data) => {
-      if (data) {
-        queryClient.invalidateQueries({ queryKey: ["event", data.id, userId] });
-      }
+    onSuccess: (updatedEvent) => {
       queryClient.invalidateQueries({ queryKey: ["events", userId] });
+      if (updatedEvent) {
+        queryClient.invalidateQueries({
+          queryKey: ["event", updatedEvent.id, userId],
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["memories", userId] });
     },
   });
@@ -73,8 +73,8 @@ export function useDeleteEvent() {
   const { userId } = useAuth();
   return useMutation<boolean, Error, string>({
     mutationFn: (id: string) => eventsActions.deleteEvent(id),
-    onSuccess: (data, eventId) => {
-      if (data) {
+    onSuccess: (deleted, eventId) => {
+      if (deleted) {
         queryClient.removeQueries({ queryKey: ["event", eventId, userId] });
       }
       queryClient.invalidateQueries({ queryKey: ["events", userId] });

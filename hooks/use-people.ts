@@ -43,7 +43,9 @@ export function useUpdatePerson() {
       updates,
     }: {
       id: string;
-      updates: Partial<Omit<Person, "id" | "createdAt" | "ownerId">>;
+      updates: Partial<
+        Omit<Person, "id" | "createdAt" | "updatedAt" | "ownerId">
+      >;
     }) => peopleActions.updatePerson(id, updates),
     onSuccess: (data) => {
       if (data) {
@@ -61,11 +63,17 @@ export function useDeletePerson() {
   const { userId } = useAuth();
   return useMutation({
     mutationFn: (id: string) => peopleActions.deletePerson(id),
-    onSuccess: (data, personId) => {
-      if (data) {
+    onSuccess: (deleted, personId) => {
+      if (deleted) {
         queryClient.removeQueries({ queryKey: ["person", personId, userId] });
       }
       queryClient.invalidateQueries({ queryKey: ["people", userId] });
     },
+  });
+}
+
+export function useSearchPeople() {
+  return useMutation({
+    mutationFn: (query: string) => peopleActions.searchPeople(query),
   });
 }

@@ -49,7 +49,9 @@ export function useUpdatePlace() {
       updates,
     }: {
       id: string;
-      updates: Partial<Omit<Place, "id" | "createdAt" | "ownerId">>;
+      updates: Partial<
+        Omit<Place, "id" | "createdAt" | "updatedAt" | "ownerId">
+      >;
     }) => placesActions.updatePlace(id, updates),
     onSuccess: (data) => {
       if (data) {
@@ -65,11 +67,17 @@ export function useDeletePlace() {
   const { userId } = useAuth();
   return useMutation({
     mutationFn: (id: string) => placesActions.deletePlace(id),
-    onSuccess: (data, placeId) => {
-      if (data) {
+    onSuccess: (deleted, placeId) => {
+      if (deleted) {
         queryClient.removeQueries({ queryKey: ["place", placeId, userId] });
       }
       queryClient.invalidateQueries({ queryKey: ["places", userId] });
     },
+  });
+}
+
+export function useSearchPlaces() {
+  return useMutation({
+    mutationFn: (query: string) => placesActions.searchPlaces(query),
   });
 }
