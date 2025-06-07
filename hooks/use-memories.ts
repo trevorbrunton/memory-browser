@@ -282,8 +282,12 @@ export function useAddMemoryWithFile() {
 
       return memoriesActions.addMemory(fullMemoryData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["memories"] });
+    onSuccess: (newMemory) => {
+      queryClient.setQueryData<Memory[]>(["memories"], (oldMemories = []) => [
+        newMemory,
+        ...oldMemories,
+      ]);
+      queryClient.invalidateQueries({ queryKey: ["memories"], exact: true });
     },
   });
 }

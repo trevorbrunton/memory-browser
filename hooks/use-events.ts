@@ -76,10 +76,19 @@ export function useAddEvents() {
       );
 
       queryClient.setQueryData<CustomEventType[]>(["events"], (old = []) => [
-        ...old,
         ...optimisticEvents,
+        ...old,
       ]);
       return { previousEvents };
+    },
+    onSuccess: (newEvents) => {
+      queryClient.setQueryData<CustomEventType[]>(["events"], (old = []) => {
+        const optimisticIds = old
+          .filter((e) => e.id.startsWith("temp-"))
+          .map((e) => e.id);
+        const remainingOld = old.filter((e) => !optimisticIds.includes(e.id));
+        return [...newEvents, ...remainingOld];
+      });
     },
     onError: (err, newEventData, context) => {
       if (context?.previousEvents) {
@@ -126,6 +135,16 @@ export function useUpdateEventDetails() {
         )
       );
       return { previousEvent, previousEvents };
+    },
+    onSuccess: (updatedEvent) => {
+      if (updatedEvent) {
+        queryClient.setQueryData(["event", updatedEvent.id], updatedEvent);
+        queryClient.setQueryData<CustomEventType[]>(["events"], (old = []) => {
+          return old.map((event) =>
+            event.id === updatedEvent.id ? updatedEvent : event
+          );
+        });
+      }
     },
     onError: (err, { id }, context) => {
       if (context?.previousEvent)
