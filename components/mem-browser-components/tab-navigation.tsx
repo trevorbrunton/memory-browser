@@ -26,16 +26,23 @@ export function TabNavigation({
     <div className="flex items-center justify-between">
       <TabsList className="grid w-full max-w-md grid-cols-4">
         <TabsTrigger value="memories" className="flex items-center gap-2">
-          <ImageIcon className="h-4 w-4" />
-          Memories ({memoriesCount})
+          <div className="hidden sm:flex items-center">
+            <ImageIcon className="h-4 w-4 mr-1" />
+            <span className="flex items-center">
+              Memories ({memoriesCount})
+            </span>
+          </div>
+          <div className="flex sm:hidden items-center">
+            <ImageIcon className="h-4 w-4" />({memoriesCount})
+          </div>
         </TabsTrigger>
 
         <TabsTrigger value="people" className="flex items-center gap-2">
-          <div className="hidden sm:flex">
+          <div className="hidden sm:flex items-center">
             <User className="h-4 w-4 mr-1" />
             People ({peopleCount})
           </div>
-          <div className="flex sm:hidden">
+          <div className="flex sm:hidden items-center">
             <User className="h-4 w-4" />({peopleCount})
           </div>
         </TabsTrigger>
@@ -45,7 +52,7 @@ export function TabNavigation({
             <Calendar className="h-4 w-4 mr-1" />
             Events ({eventsCount})
           </div>
-          <div className="flex sm:hidden">
+          <div className="flex sm:hidden items-center">
             <Calendar className="h-4 w-4" />({eventsCount})
           </div>
         </TabsTrigger>
@@ -55,7 +62,7 @@ export function TabNavigation({
             <MapPin className="h-4 w-4 mr-1" />
             Places ({placesCount})
           </div>
-          <div className="flex sm:hidden">
+          <div className="flex sm:hidden items-center">
             <MapPin className="h-4 w-4" />({placesCount})
           </div>
         </TabsTrigger>
@@ -73,7 +80,36 @@ export function TabNavigation({
             </div>
             <div className="flex sm:hidden">
               <Plus className="h-4 w-4" />
-
+            </div>
+          </Button>
+        )}
+        {activeTab === "people" && (
+          <Button
+            onClick={() => router.push("/create-person")}
+            variant="default"
+            size="sm"
+          >
+            <div className="hidden sm:flex">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Place
+            </div>
+            <div className="flex sm:hidden">
+              <Plus className="h-4 w-4" />
+            </div>
+          </Button>
+        )}
+        {activeTab === "events" && (
+          <Button
+            onClick={() => router.push("/create-event")}
+            variant="default"
+            size="sm"
+          >
+            <div className="hidden sm:flex">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Event
+            </div>
+            <div className="flex sm:hidden">
+              <Plus className="h-4 w-4" />
             </div>
           </Button>
         )}
@@ -83,8 +119,13 @@ export function TabNavigation({
             variant="default"
             size="sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Place
+            <div className="hidden sm:flex">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Place
+            </div>
+            <div className="flex sm:hidden">
+              <Plus className="h-4 w-4" />
+            </div>
           </Button>
         )}
       </div>
